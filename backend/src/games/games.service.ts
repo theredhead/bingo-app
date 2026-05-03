@@ -209,31 +209,30 @@ export class GamesService {
     // Reload game to get fresh player data with updated stamps
     const freshGame = await this.findGame(joinCode);
 
-    // Check all players for bingo and assign placements to newly completed players
-    let anyNewBingo = false;
-    for (const p of freshGame.players) {
-      if (p.placement === null || p.placement === undefined) {
-        const stampedKeys = new Set(p.stampedKeys);
-        if (this.hasBingo(p.card, stampedKeys)) {
-          const completedCount = freshGame.players.filter(
-            (pl) => pl.placement !== null && pl.placement !== undefined,
-          ).length;
-          const newPlacement = completedCount + 1;
-          await this.playerRepo.save({
-            ...p,
-            placement: newPlacement,
-          });
-          anyNewBingo = true;
-        }
+    const newBingos = freshGame.players.filter((entry) => {
+      if (entry.placement !== null && entry.placement !== undefined) {
+        return false;
       }
-    }
 
-    // End game as soon as anyone has bingo
-    if (anyNewBingo) {
+      return this.hasBingo(entry.card, new Set(entry.stampedKeys));
+    });
+
+    if (newBingos.length > 0) {
+      const winner =
+        newBingos.find((entry) => entry.id === dto.playerId) ?? newBingos[0];
+
+      for (const entry of newBingos) {
+        await this.playerRepo.save({
+          ...entry,
+          placement: entry.id === winner.id ? 1 : 2,
+        });
+      }
+
       await this.gameRepo.save({
         ...freshGame,
         status: "completed",
         endedAt: new Date(),
+        winnerPlayerId: winner.id,
       });
     }
 

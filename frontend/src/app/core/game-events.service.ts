@@ -6,29 +6,66 @@ import { HostedGameSnapshot } from "./models";
   providedIn: "root",
 })
 export class GameEventsService {
+  private readonly reconnectDelayMs = 2000;
+
   watchGame(
     joinCode: string,
     playerId: string,
   ): Observable<HostedGameSnapshot> {
     return new Observable<HostedGameSnapshot>((observer) => {
       const params = new URLSearchParams({ playerId });
-      const source = new EventSource(
-        `/api/games/${encodeURIComponent(joinCode)}/events?${params.toString()}`,
-      );
+      const url = `/api/games/${encodeURIComponent(joinCode)}/events?${params.toString()}`;
+      let source: EventSource | null = null;
+      let reconnectTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
+      let closed = false;
 
-      source.onmessage = (event) => {
-        try {
-          observer.next(JSON.parse(event.data) as HostedGameSnapshot);
-        } catch (error) {
-          observer.error(error);
+      const clearReconnectTimer = () => {
+        if (reconnectTimer !== undefined) {
+          globalThis.clearTimeout(reconnectTimer);
+          reconnectTimer = undefined;
         }
       };
 
-      source.onerror = (error) => {
-        observer.error(error);
+      const connect = () => {
+        if (closed) {
+          return;
+        }
+
+        source = new EventSource(url);
+
+        source.onmessage = (event) => {
+          try {
+            observer.next(JSON.parse(event.data) as HostedGameSnapshot);
+          } catch (error) {
+            closed = true;
+            clearReconnectTimer();
+            source?.close();
+            observer.error(error);
+          }
+        };
+
+        source.onerror = () => {
+          source?.close();
+          source = null;
+
+          if (closed || reconnectTimer !== undefined) {
+            return;
+          }
+
+          reconnectTimer = globalThis.setTimeout(() => {
+            reconnectTimer = undefined;
+            connect();
+          }, this.reconnectDelayMs);
+        };
       };
 
-      return () => source.close();
+      connect();
+
+      return () => {
+        closed = true;
+        clearReconnectTimer();
+        source?.close();
+      };
     });
   }
 }

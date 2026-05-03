@@ -59,6 +59,19 @@ h1 {
   text-decoration: none;
 }
 
+.waiting-message {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--highlight);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .roster ul {
   display: grid;
   gap: 0.75rem;
@@ -187,6 +200,43 @@ h1 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+}
+
+.game-over {
+  gap: 1.2rem;
+  padding: 1.4rem;
+}
+
+.game-over-copy {
+  max-width: 42ch;
+}
+
+.winner-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(49, 114, 81, 0.12), rgba(223, 129, 60, 0.12));
+  border: 1px solid rgba(49, 114, 81, 0.18);
+}
+
+.champion-badge {
+  height: 3.4rem;
+  width: 3.4rem;
+  font-size: 1rem;
+}
+
+.winner-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.winner-label {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .ranking-entry {

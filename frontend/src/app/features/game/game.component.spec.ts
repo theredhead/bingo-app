@@ -62,6 +62,59 @@ describe("GameComponent", () => {
     canStart: false,
   };
 
+  const completedSnapshot: HostedGameSnapshot = {
+    ...activeSnapshot,
+    game: {
+      ...activeSnapshot.game,
+      status: "completed",
+      winnerPlayerId: "player-1",
+      endedAt: "2026-05-03T01:02:00.000Z",
+    },
+    players: [
+      {
+        id: "player-1",
+        displayName: "Host",
+        isHost: true,
+        joinedAt: "2026-05-03T00:00:00.000Z",
+        placement: 1,
+      },
+      {
+        id: "player-2",
+        displayName: "Guest",
+        isHost: false,
+        joinedAt: "2026-05-03T00:01:00.000Z",
+        placement: 2,
+      },
+    ],
+    winner: {
+      id: "player-1",
+      displayName: "Host",
+      isHost: true,
+      joinedAt: "2026-05-03T00:00:00.000Z",
+      placement: 1,
+    },
+  };
+
+  const waitingSnapshot: HostedGameSnapshot = {
+    ...pendingSnapshot,
+    players: [
+      {
+        id: "player-1",
+        displayName: "Host",
+        isHost: true,
+        joinedAt: "2026-05-03T00:00:00.000Z",
+      },
+      {
+        id: "player-2",
+        displayName: "Guest",
+        isHost: false,
+        joinedAt: "2026-05-03T00:01:00.000Z",
+      },
+    ],
+    playerId: "player-2",
+    canStart: false,
+  };
+
   beforeEach(async () => {
     events$ = new Subject<HostedGameSnapshot>();
     apiService = {
@@ -138,6 +191,30 @@ describe("GameComponent", () => {
     expect(component.snapshot()?.game.status).toBe("active");
   });
 
+  it("shows a waiting message for non-host players in the lobby", async () => {
+    playerSession.getPlayerId.mockReturnValue("player-2");
+    apiService.getGame.mockReturnValue(of(waitingSnapshot));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const content = fixture.nativeElement.textContent;
+    expect(content).toContain("WAITING FOR THE HOST TO START THE GAME");
+  });
+
+  it("renders a dedicated game over screen instead of the live game header", async () => {
+    apiService.getGame.mockReturnValue(of(completedSnapshot));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const content = fixture.nativeElement.textContent;
+    expect(content).toContain("Game Over");
+    expect(content).toContain("Host wins!");
+    expect(content).toContain("Runners-up");
+    expect(content).not.toContain("Live Game");
+  });
+
   it("toggles a stamp on an active game cell", () => {
     apiService.getGame.mockReturnValue(of(activeSnapshot));
     apiService.toggleStamp.mockReturnValue(
@@ -166,5 +243,18 @@ describe("GameComponent", () => {
 
     expect(component.loading()).toBe(false);
     expect(component.error()).toContain("Could not load that game.");
+  });
+
+  it("clears a stale reconnect error after a later live update arrives", async () => {
+    apiService.getGame.mockReturnValue(of(activeSnapshot));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    component.error.set("Could not restore the live connection.");
+    events$.next(activeSnapshot);
+    await fixture.whenStable();
+
+    expect(component.error()).toBe("");
   });
 });

@@ -345,8 +345,68 @@ describe("GamesService", () => {
     });
 
     expect(result.game.status).toBe("completed");
+    expect(result.game.winnerPlayerId).toBe(hostPlayerId);
     const hostPlayer = result.players.find((p) => p.id === hostPlayerId);
     expect(hostPlayer?.placement).toBe(1);
+  });
+
+  it("assigns shared runners-up when the finishing word also gives others bingo", async () => {
+    mockBingoService.generateCard
+      .mockResolvedValueOnce([
+        ["A1", "A2", "A3", "A4", "A5"],
+        ["B1", "B2", "B3", "B4", "B5"],
+        ["C1", "C2", "FREE", "C4", "C5"],
+        ["D1", "D2", "D3", "D4", "D5"],
+        ["E1", "E2", "E3", "E4", "E5"],
+      ])
+      .mockResolvedValueOnce([
+        ["A1", "A2", "A3", "A4", "A5"],
+        ["Y1", "Y2", "Y3", "Y4", "Y5"],
+        ["Z1", "Z2", "FREE", "Z4", "Z5"],
+        ["W1", "W2", "W3", "W4", "W5"],
+        ["Q1", "Q2", "Q3", "Q4", "Q5"],
+      ]);
+
+    const created = await service.createGame({
+      wordlistId: "wordlist-1",
+      hostName: "Host",
+    });
+    const hostPlayerId = created.playerId as string;
+
+    const joined = await service.joinGame(created.game.joinCode, {
+      displayName: "Guest",
+    });
+    const guestPlayerId = joined.playerId as string;
+
+    await service.startGame(created.game.joinCode, { playerId: hostPlayerId });
+
+    for (const [row, col] of [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+    ] as Array<[number, number]>) {
+      await service.toggleStamp(created.game.joinCode, {
+        playerId: hostPlayerId,
+        row,
+        col,
+      });
+    }
+
+    const result = await service.toggleStamp(created.game.joinCode, {
+      playerId: hostPlayerId,
+      row: 0,
+      col: 4,
+    });
+
+    expect(result.game.status).toBe("completed");
+    expect(result.game.winnerPlayerId).toBe(hostPlayerId);
+    expect(
+      result.players.find((player) => player.id === hostPlayerId)?.placement,
+    ).toBe(1);
+    expect(
+      result.players.find((player) => player.id === guestPlayerId)?.placement,
+    ).toBe(2);
   });
 
   it("throws if the requested game does not exist", async () => {

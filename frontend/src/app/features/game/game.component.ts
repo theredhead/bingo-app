@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
 import { ApiService } from "../../core/api.service";
 import { GameEventsService } from "../../core/game-events.service";
-import { HostedGameSnapshot } from "../../core/models";
+import { HostedGamePlayer, HostedGameSnapshot } from "../../core/models";
 import { PlayerSessionService } from "../../core/player-session.service";
 import { QrCodeService } from "../../core/qr-code.service";
 
@@ -46,9 +46,12 @@ export class GameComponent implements OnInit, OnDestroy {
     this.eventSubscription = this.eventsService
       .watchGame(this.joinCode, this.playerId)
       .subscribe({
-        next: (snapshot) => this.applySnapshot(snapshot),
+        next: (snapshot) => {
+          this.error.set("");
+          this.applySnapshot(snapshot);
+        },
         error: () => {
-          this.error.set("Live updates disconnected. Refresh to reconnect.");
+          this.error.set("Could not restore the live connection.");
         },
       });
   }
@@ -89,10 +92,22 @@ export class GameComponent implements OnInit, OnDestroy {
     return this.snapshot()?.stampedKeys?.includes(`${row}-${col}`) ?? false;
   }
 
-  getPlacedPlayers(players: any[]): any[] {
+  getPlacedPlayers(players: HostedGamePlayer[]): HostedGamePlayer[] {
     return [...players]
       .filter((p) => p.placement !== null && p.placement !== undefined)
       .sort((a, b) => (a.placement ?? 999) - (b.placement ?? 999));
+  }
+
+  getWinner(players: HostedGamePlayer[]): HostedGamePlayer | undefined {
+    return this.getPlacedPlayers(players).find(
+      (player) => player.placement === 1,
+    );
+  }
+
+  getRunnersUp(players: HostedGamePlayer[]): HostedGamePlayer[] {
+    return this.getPlacedPlayers(players).filter(
+      (player) => player.placement !== 1,
+    );
   }
 
   getPlacementLabel(placement: number | null | undefined): string {

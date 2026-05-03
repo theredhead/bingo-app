@@ -20,6 +20,8 @@
             <button type="button" class="primary-btn" (click)="startGame()">
               Start Game
             </button>
+          } @else {
+            <p class="waiting-message">WAITING FOR THE HOST TO START THE GAME</p>
           }
         </div>
 
@@ -37,18 +39,38 @@
           </ul>
         </div>
       </div>
-    } @else {
-      @if (data.game.status === 'completed') {
-        <div class="rankings-panel">
-          <p class="kicker">Final Rankings</p>
-          @for (player of getPlacedPlayers(data.players); track player.id) {
-            <div class="ranking-entry">
-              <span class="placement-badge">{{ getPlacementLabel(player.placement) }}</span>
-              <span>{{ player.displayName }}</span>
+    } @else if (data.game.status === 'completed') {
+      <section class="game-over panel">
+        <p class="kicker">Game Over</p>
+        @if (getWinner(data.players); as winner) {
+          <h1>{{ winner.displayName }} wins!</h1>
+          <p class="copy game-over-copy">
+            {{ winner.displayName }} called bingo first and closed out game {{ data.game.joinCode }}.
+          </p>
+          <div class="winner-hero">
+            <span class="placement-badge champion-badge">{{ getPlacementLabel(winner.placement) }}</span>
+            <div>
+              <p class="winner-name">{{ winner.displayName }}</p>
+              <p class="winner-label">Winner</p>
             </div>
-          }
-        </div>
-      }
+          </div>
+        }
+
+        @if (getRunnersUp(data.players).length > 0) {
+          <div class="rankings-panel">
+            <p class="kicker">Runners-up</p>
+            @for (player of getRunnersUp(data.players); track player.id) {
+              <div class="ranking-entry">
+                <span class="placement-badge">{{ getPlacementLabel(player.placement) }}</span>
+                <span>{{ player.displayName }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <a routerLink="/" class="home-link">Back home</a>
+      </section>
+    } @else {
       <div class="panel game-header">
         <div>
           <p class="kicker">Live Game</p>
@@ -57,7 +79,7 @@
         <a routerLink="/" class="home-link">Back home</a>
       </div>
 
-      <div class="bingo-card" [class.locked]="data.game.status === 'completed'">
+      <div class="bingo-card">
         @for (row of data.card ?? []; track $index; let rowIndex = $index) {
           <div class="bingo-row">
             @for (cell of row; track $index; let colIndex = $index) {
@@ -66,7 +88,6 @@
                 class="bingo-cell"
                 [class.free-cell]="cell === 'FREE'"
                 [class.stamped]="isStamped(rowIndex, colIndex, cell)"
-                [disabled]="data.game.status === 'completed'"
                 (click)="toggleStamp(rowIndex, colIndex, cell)"
               >
                 <span class="cell-text">{{ cell }}</span>
