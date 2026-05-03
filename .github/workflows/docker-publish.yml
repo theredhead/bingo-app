@@ -1,11 +1,12 @@
 name: Build and publish Docker image
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
+  workflow_dispatch: # disabled automatic triggers — run manually when needed
+#  push:
+#    branches:
+#      - main
+#    tags:
+#      - "v*"
 
 jobs:
   build-and-push:
