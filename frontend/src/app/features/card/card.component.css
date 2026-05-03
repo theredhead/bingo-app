@@ -4,6 +4,57 @@
   padding: 0.75rem 0 1.5rem;
 }
 
+.eyebrow {
+  color: var(--highlight);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+h2 {
+  margin-top: 0.25rem;
+  font-size: clamp(1.6rem, 7.5vw, 2.8rem);
+  line-height: 1.05;
+  font-weight: 800;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bingo-banner {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  background: var(--winner);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: banner-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.bingo-card {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow);
+  transition: border-color 0.3s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.card-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0.75rem 0 1.5rem;
+}
+
 .card-header {
   margin-bottom: 0.9rem;
 }

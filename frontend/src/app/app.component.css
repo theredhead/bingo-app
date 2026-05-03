@@ -2,6 +2,30 @@
   min-height: 100vh;
 }
 
+:root {
+  --bg: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+  --paper: rgba(255,255,255,0.85);
+  --line: #d1d5db;
+  --radius: 18px;
+  --shadow: 0 4px 24px 0 rgba(60,80,120,0.10), 0 1.5px 6px 0 rgba(60,80,120,0.08);
+  --accent: linear-gradient(90deg, #5b9df9 0%, #6ee7b7 100%);
+  --accent-strong: #2563eb;
+  --accent-soft: #e0e7ef;
+  --highlight: #5b9df9;
+  --muted: #64748b;
+  --winner: linear-gradient(90deg, #fbbf24 0%, #f472b6 100%);
+}
+
+body, .app-shell {
+  min-height: 100vh;
+  background: var(--bg);
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.app-shell {
+  min-height: 100vh;
+}
+
 .container {
   width: min(1100px, calc(100% - 2rem));
   margin: 0 auto;
