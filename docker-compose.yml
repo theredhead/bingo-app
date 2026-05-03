@@ -6,11 +6,6 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - DATABASE_PATH=/data/db.sqlite
+      - DATABASE_PATH=${DATABASE_PATH:-/app/db.sqlite}
       - FRONTEND_URL=${FRONTEND_URL:-}
-    volumes:
-      - bingo-data:/data
     restart: unless-stopped
-
-volumes:
-  bingo-data:

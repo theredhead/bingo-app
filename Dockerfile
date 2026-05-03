@@ -26,10 +26,26 @@ COPY --from=frontend-build /app/backend/public ./public
 RUN npm run build
 
 
-# ── Stage 3: Production image ────────────────────────────────────────────────
+# ── Stage 3: Seed the database ───────────────────────────────────────────────
+FROM node:22-alpine AS seeder
+
+WORKDIR /app
+
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=backend-build /app/backend/dist ./dist
+COPY backend/wordlists ./wordlists
+
+ENV DATABASE_PATH=/app/db.sqlite
+RUN node dist/seed/seed-wordlist.js
+
+
+# ── Stage 4: Production image ────────────────────────────────────────────────
 FROM node:22-alpine AS production
 
 ENV NODE_ENV=production
+ENV DATABASE_PATH=/app/db.sqlite
 
 WORKDIR /app
 
@@ -37,14 +53,15 @@ WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
-# Compiled backend
+# Compiled backend + frontend static files
 COPY --from=backend-build /app/backend/dist ./dist
-
-# Frontend static files served by NestJS
 COPY --from=backend-build /app/backend/public ./public
 
-# Wordlists for seeding
+# Wordlists (available for re-seeding if needed)
 COPY backend/wordlists ./wordlists
+
+# Pre-seeded database baked into the image
+COPY --from=seeder /app/db.sqlite ./db.sqlite
 
 EXPOSE 3000
 
