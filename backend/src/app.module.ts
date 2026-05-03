@@ -7,6 +7,7 @@ import { WordlistsModule } from "./wordlists/wordlists.module";
 import { BingoModule } from "./bingo/bingo.module";
 import { ConfigModule as AppConfigModule } from "./config/config.module";
 import { GamesModule } from "./games/games.module";
+import { HoldemModule } from "./holdem/holdem.module";
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { GamesModule } from "./games/games.module";
     BingoModule,
     GamesModule,
     AppConfigModule,
+    HoldemModule,
   ],
 })
 export class AppModule {}

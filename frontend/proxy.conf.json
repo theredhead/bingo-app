@@ -2,6 +2,19 @@
   "/api": {
     "target": "http://localhost:3000",
     "secure": false,
-    "logLevel": "debug"
+    "logLevel": "debug",
+    "headers": {
+      "X-Forwarded-For": "127.0.0.1"
+    }
+  },
+  "/api/holdem/*/events": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {},
+    "headers": {
+      "Accept": "text/event-stream",
+      "Cache-Control": "no-cache"
+    }
   }
 }

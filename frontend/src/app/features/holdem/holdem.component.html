@@ -1,0 +1,283 @@
+<section class="holdem" [class.is-table]="step() === 'table'">
+  <p class="page-eyebrow">Games</p>
+  <h1>Texas Hold'em</h1>
+
+  @if (step() === 'landing') {
+    <div class="holdem-actions">
+      <button class="primary-btn" (click)="toCreate()">+ Create Table</button>
+    </div>
+    <div class="public-tables">
+      <h2>Open Tables</h2>
+      @if (publicLoading()) {
+        <div class="loading">Loading tables…</div>
+      } @else if (publicTables().length === 0) {
+        <div class="loading">No tables yet — be the first!</div>
+      } @else {
+        <div class="table-list">
+          @for (t of publicTables(); track t.id) {
+            <div class="table-card">
+              <div class="table-info">
+                <span class="table-name">{{ t.limitType }} · {{ t.maxSeats }} seats</span>
+                <span class="table-seats">{{ t.players.length }}/{{ t.maxSeats }} players</span>
+                <span class="table-status" [attr.data-status]="t.status">{{ t.status }}</span>
+              </div>
+              @if (pendingJoinId() === t.id) {
+                <div class="join-inline">
+                  <input
+                    [value]="displayName()"
+                    (input)="displayName.set($any($event.target).value)"
+                    placeholder="Display name"
+                    required
+                  />
+                  <button class="primary-btn" [disabled]="loading() || !displayName()" (click)="joinGame(t.id)">Join</button>
+                  <button class="ghost-btn" type="button" (click)="cancelJoin()">Cancel</button>
+                  @if (error()) { <div class="error">{{ error() }}</div> }
+                </div>
+              } @else {
+                <button class="primary-btn" (click)="startJoin(t.id)">Join</button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (step() === 'create') {
+    <form (submit)="createGame($event)" class="holdem-form">
+      <div class="form-title">New Table</div>
+      <label>Display Name
+        <input [value]="displayName()" (input)="displayName.set($any($event.target).value)" name="displayName" required placeholder="How others see you" />
+      </label>
+      <label>Seats
+        <select [value]="maxSeats()" (input)="maxSeats.set($any($event.target).valueAsNumber)">
+          @for (n of [4,5,6,7,8]; track n) {
+            <option [value]="n">{{ n }} players</option>
+          }
+        </select>
+      </label>
+      <label>Limit Type
+        <select [value]="limitType()" (input)="limitType.set($any($event.target).value)">
+          <option value="no-limit">No Limit</option>
+          <option value="pot-limit">Pot Limit</option>
+          <option value="fixed-limit">Fixed Limit</option>
+        </select>
+      </label>
+      <label>Move Time Limit (sec)
+        <input type="number" [value]="moveTimeLimit()" (input)="moveTimeLimit.set($any($event.target).valueAsNumber)" min="10" max="120" />
+      </label>
+      <label>Bot Players (0–{{ maxSeats() - 1 }})
+        <input type="number"
+          [value]="botCount()"
+          (input)="botCount.set($any($event.target).valueAsNumber)"
+          min="0"
+          [max]="maxSeats() - 1" />
+      </label>
+      <div class="form-actions">
+        <button class="primary-btn" type="submit" [disabled]="loading() || !displayName()">Create &amp; Join</button>
+        <button class="ghost-btn" type="button" (click)="toLanding()">Back</button>
+      </div>
+      @if (error()) { <div class="error">{{ error() }}</div> }
+    </form>
+  }
+
+  @if (step() === 'table') {
+    @if (!game()) {
+      <div class="loading">Loading table…</div>
+    } @else {
+      <div class="table-view">
+
+        <!-- Header bar -->
+        <div class="table-header">
+          <span class="phase-badge" [attr.data-phase]="game()!.state.phase">{{ game()!.state.phase.toUpperCase() }}</span>
+          <span class="header-sep">·</span>
+          <span class="pot-label">Pot: <strong>{{ game()!.state.pot }}</strong></span>
+          <span class="header-sep">·</span>
+          <span class="limit-label">{{ game()!.limitType }}</span>
+          <button class="leave-btn" (click)="toLanding()">Leave ✕</button>
+        </div>
+
+        <!-- Seats: opponents above the table -->
+        <div class="seats opponents-row">
+          @for (p of opponentSeats(); track p?.id ?? $index) {
+            @if (p && p.isSeated) {
+              <div class="seat"
+                [class.active]="p.id === game()!.state.activePlayerId"
+                [class.folded]="p.isFolded"
+                [style.--timer-pct]="p.id === game()!.state.activePlayerId ? timerPct() : null"
+                [style.--timer-color]="p.id === game()!.state.activePlayerId && timeLeft() <= 5 ? '#c0392b' : null">
+                <div class="seat-name">
+                  @if (p.displayName.startsWith('Bot')) { <span>🤖</span> }
+                  {{ p.displayName }}
+                  @if (p.isHost) { <span class="host-badge">HOST</span> }
+                  @if (p.id === dealerPlayerId()) { <span class="pos-badge dealer-badge">D</span> }
+                  @if (p.id === sbPlayerId()) { <span class="pos-badge sb-badge">SB</span> }
+                  @if (p.id === bbPlayerId()) { <span class="pos-badge bb-badge">BB</span> }
+                </div>
+                <div class="seat-chips">💰 {{ p.chips }}</div>
+                @if ((game()!.state.bets?.[p.id] ?? 0) > 0) {
+                  <div class="seat-bet">Bet: {{ game()!.state.bets?.[p.id] }}</div>
+                }
+                @if (p.isFolded) { <div class="badge folded-badge">FOLDED</div> }
+                @if (p.isAllIn) { <div class="badge allin-badge">ALL IN</div> }
+                @if (p.displayName.startsWith('Bot') && p.id === game()!.state.activePlayerId && game()!.state.phase !== 'showdown') {
+                  <div class="badge thinking-badge">⌛ Thinking…</div>
+                }
+                @if (isHost() && p.displayName.startsWith('Bot')) {
+                  <button class="remove-bot-btn" (click)="removeBot(p.id)" title="Remove bot">×</button>
+                }
+              </div>
+            } @else {
+              <div class="seat empty" [class.host-empty]="isHost()" (click)="isHost() ? addBot() : null">
+                <div class="seat-name">{{ isHost() ? '+ Bot' : 'Empty' }}</div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Community board -->
+        <div class="board-area">
+          <div class="board-label">Community Cards</div>
+          <div class="board">
+            @for (c of game()!.state.board; track c) {
+              <span class="card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+            }
+            @for (_ of [].constructor(5 - game()!.state.board.length); track $index) {
+              <span class="card placeholder"></span>
+            }
+          </div>
+        </div>
+
+        <!-- Floating winner banner -->
+        @if (winnerBannerVisible() && game()!.state.winners?.length) {
+          <div class="winner-banner" (click)="winnerBannerVisible.set(false)">
+            @for (w of game()!.state.winners!; track w.playerId) {
+              <div class="winner-banner-title">
+                🏆 <strong>{{ w.name }}</strong> wins <span class="winner-chips">{{ w.amount }}</span> chips
+              </div>
+              <div class="winner-hand-name">{{ w.hand }}</div>
+              <div class="winner-cards">
+                @for (c of w.cards; track c) {
+                  <span class="card winner-hole" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+                }
+                @if (game()!.state.board.length) {
+                  <span class="winner-sep">+</span>
+                  @for (c of game()!.state.board; track c) {
+                    <span class="card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+                  }
+                }
+              </div>
+            }
+            <div class="winner-dismiss">tap to dismiss · next hand starting…</div>
+          </div>
+        }
+
+        @if (mySeat(); as me) {
+          <div class="seat me-seat"
+            [class.active]="me.id === game()!.state.activePlayerId"
+            [class.folded]="me.isFolded"
+            [style.--timer-pct]="me.id === game()!.state.activePlayerId ? timerPct() : null"
+            [style.--timer-color]="me.id === game()!.state.activePlayerId && timeLeft() <= 5 ? '#c0392b' : null">
+            <div class="seat-name">
+              {{ me.displayName }}
+              @if (me.isHost) { <span class="host-badge">HOST</span> }
+              @if (me.id === dealerPlayerId()) { <span class="pos-badge dealer-badge">D</span> }
+              @if (me.id === sbPlayerId()) { <span class="pos-badge sb-badge">SB</span> }
+              @if (me.id === bbPlayerId()) { <span class="pos-badge bb-badge">BB</span> }
+            </div>
+            <div class="seat-chips">💰 {{ me.chips }}</div>
+            @if ((game()!.state.bets?.[me.id] ?? 0) > 0) {
+              <div class="seat-bet">Bet: {{ game()!.state.bets?.[me.id] }}</div>
+            }
+            @if (me.isFolded) { <div class="badge folded-badge">FOLDED</div> }
+            @if (me.isAllIn) { <div class="badge allin-badge">ALL IN</div> }
+            @if (me.cards.length) {
+              <div class="my-hole-cards">
+                @for (c of me.cards; track c) {
+                  <span class="card my-card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+
+
+
+        <!-- Action log -->
+        @if (game()!.actions.length) {
+          <div class="action-log">
+            @for (a of game()!.actions.slice(-5); track $index) {
+              <span class="log-entry">{{ a.name }} {{ a.type }}{{ a.amount ? ' ' + a.amount : '' }}</span>
+            }
+          </div>
+        }
+
+        <!-- Active player label + countdown (ring on seat is the primary indicator) -->
+        @if (game()!.state.phase !== 'showdown' && game()!.state.phase !== 'waiting' && timeLeft() > 0) {
+          <div class="turn-timer-wrap">
+            @let activeName = game()!.players.find(p => p.id === game()!.state.activePlayerId)?.displayName ?? '…';
+            <span class="timer-player-label" [class.my-turn]="isMyTurn()">
+              {{ isMyTurn() ? 'Your turn' : activeName }}
+            </span>
+            <span class="timer-label" [class.urgent]="timeLeft() <= 5">{{ timeLeft() }}s</span>
+          </div>
+        }
+
+        <!-- Action controls -->
+        <div class="actions">
+          @if (game()!.state.phase === 'waiting') {
+            @if (isHost() && seatedPlayers().length >= 2) {
+              <button class="primary-btn" (click)="startGame()">Start Hand</button>
+            } @else {
+              <div class="waiting-turn">Waiting for more players…</div>
+            }
+          } @else if (isMyTurn() && game()!.state.phase !== 'showdown') {
+            <button class="action-btn fold-btn" (click)="sendAction({ type: 'fold' })">Fold</button>
+            @if (callAmount() === 0) {
+              <button class="action-btn check-btn" (click)="sendAction({ type: 'check' })">Check</button>
+            } @else {
+              <button class="action-btn call-btn" (click)="sendAction({ type: 'call' })">Call {{ callAmount() }}</button>
+            }
+            <div class="raise-control">
+              <input type="number"
+                [value]="raiseAmount()"
+                (input)="raiseAmount.set($any($event.target).valueAsNumber)"
+                [min]="minRaise()"
+                [max]="player()!.chips"
+                step="5" />
+              <button class="action-btn raise-btn"
+                [disabled]="raiseAmount() < minRaise()"
+                (click)="betOrRaise()">
+                {{ callAmount() === 0 ? 'Bet' : 'Raise to' }} {{ raiseAmount() }}
+              </button>
+            </div>
+          } @else if (game()!.state.phase !== 'showdown') {
+            <div class="waiting-turn">
+              Waiting for {{ game()!.players.find(p => p.id === game()!.state.activePlayerId)?.displayName ?? '…' }}
+            </div>
+            @if (canPreAct()) {
+              <div class="pre-actions">
+                <button class="action-btn pre-btn"
+                  [class.pre-selected]="preAction() === 'check-fold'"
+                  (click)="togglePreAction('check-fold')">
+                  Check / Fold
+                </button>
+                <button class="action-btn pre-btn call-btn"
+                  [class.pre-selected]="preAction() === 'call-any'"
+                  (click)="togglePreAction('call-any')">
+                  Call Any
+                </button>
+                <button class="action-btn pre-btn fold-btn"
+                  [class.pre-selected]="preAction() === 'fold'"
+                  (click)="togglePreAction('fold')">
+                  Fold
+                </button>
+              </div>
+            }
+          }
+        </div>
+
+      </div>
+    }
+  }
+</section>

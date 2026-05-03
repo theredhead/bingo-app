@@ -46,7 +46,7 @@ export class HostSetupComponent implements OnInit {
             snapshot.playerId,
           );
         }
-        this.router.navigate(["/games", snapshot.game.joinCode]);
+        this.router.navigate(["/bingo/games", snapshot.game.joinCode]);
       },
       error: () => {
         this.error.set("Could not create a hosted game. Please try again.");

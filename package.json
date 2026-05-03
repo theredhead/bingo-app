@@ -6,8 +6,10 @@
     "start": "npm run dev:frontend",
     "predev": "kill-port 3000 4200 || true",
     "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:network": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend:network\"",
     "dev:backend": "cd backend && npm run start:dev",
     "dev:frontend": "cd frontend && npm start",
+    "dev:frontend:network": "cd frontend && ng serve --proxy-config proxy.conf.json --host 0.0.0.0",
     "build": "cd backend && npm run build && cd ../frontend && npm run build",
     "test": "cd backend && npm test && cd frontend && npm test",
     "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t theredhead/bingo-game:latest --push ."

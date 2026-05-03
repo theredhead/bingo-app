@@ -43,7 +43,7 @@ export class HomeComponent implements OnInit {
   }
 
   hostGame(wordlistId: string) {
-    this.router.navigate(["/host", wordlistId]);
+    this.router.navigate(["/bingo/host", wordlistId]);
   }
 
   joinExistingGame() {
@@ -54,6 +54,6 @@ export class HomeComponent implements OnInit {
     }
 
     this.joinError.set("");
-    this.router.navigate(["/join", code]);
+    this.router.navigate(["/bingo/join", code]);
   }
 }

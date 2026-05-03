@@ -70,7 +70,7 @@ describe("HomeComponent", () => {
     apiService.getWordlists.mockReturnValue(of(mockWordlists));
     fixture.detectChanges();
     component.hostGame("1");
-    expect(router.navigate).toHaveBeenCalledWith(["/host", "1"]);
+    expect(router.navigate).toHaveBeenCalledWith(["/bingo/host", "1"]);
   });
 
   it("should show an error when loading wordlists fails", () => {

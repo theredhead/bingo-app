@@ -27,6 +27,11 @@ export class JoinComponent implements OnInit {
     this.joinCode = (
       this.route.snapshot.paramMap.get("joinCode") ?? ""
     ).toUpperCase();
+    const existingPlayerId = this.playerSession.getPlayerId(this.joinCode);
+    if (existingPlayerId) {
+      this.router.navigate(["/bingo/games", this.joinCode]);
+      return;
+    }
     this.playerName = this.playerSession.getPlayerName();
   }
 
@@ -48,7 +53,7 @@ export class JoinComponent implements OnInit {
             snapshot.playerId,
           );
         }
-        this.router.navigate(["/games", snapshot.game.joinCode]);
+        this.router.navigate(["/bingo/games", snapshot.game.joinCode]);
       },
       error: () => {
         this.error.set(

@@ -13,6 +13,7 @@ describe("JoinComponent", () => {
   let session: {
     getPlayerName: ReturnType<typeof vi.fn>;
     setPlayerName: ReturnType<typeof vi.fn>;
+    getPlayerId: ReturnType<typeof vi.fn>;
     setPlayerId: ReturnType<typeof vi.fn>;
   };
 
@@ -22,6 +23,7 @@ describe("JoinComponent", () => {
     session = {
       getPlayerName: vi.fn().mockReturnValue("Stored Guest"),
       setPlayerName: vi.fn(),
+      getPlayerId: vi.fn().mockReturnValue(""),
       setPlayerId: vi.fn(),
     };
 
@@ -46,6 +48,15 @@ describe("JoinComponent", () => {
 
     fixture = TestBed.createComponent(JoinComponent);
     component = fixture.componentInstance;
+  });
+
+  it("redirects to the game immediately when a player id is already stored", () => {
+    session.getPlayerId.mockReturnValue("existing-player-id");
+
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(["/bingo/games", "ABC123"]);
+    expect(apiService.joinGame).not.toHaveBeenCalled();
   });
 
   it("prefills the stored player name and uppercases the join code", () => {
@@ -82,7 +93,7 @@ describe("JoinComponent", () => {
     expect(apiService.joinGame).toHaveBeenCalledWith("ABC123", "Guest");
     expect(session.setPlayerName).toHaveBeenCalledWith("Guest");
     expect(session.setPlayerId).toHaveBeenCalledWith("ABC123", "player-2");
-    expect(router.navigate).toHaveBeenCalledWith(["/games", "ABC123"]);
+    expect(router.navigate).toHaveBeenCalledWith(["/bingo/games", "ABC123"]);
   });
 
   it("shows an error when joining fails", () => {

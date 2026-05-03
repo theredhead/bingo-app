@@ -89,6 +89,6 @@ describe("HostSetupComponent", () => {
     expect(apiService.createGame).toHaveBeenCalledWith("wordlist-1", "Host");
     expect(session.setPlayerName).toHaveBeenCalledWith("Host");
     expect(session.setPlayerId).toHaveBeenCalledWith("ABC123", "player-1");
-    expect(router.navigate).toHaveBeenCalledWith(["/games", "ABC123"]);
+    expect(router.navigate).toHaveBeenCalledWith(["/bingo/games", "ABC123"]);
   });
 });

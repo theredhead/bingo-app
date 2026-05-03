@@ -48,7 +48,7 @@ export class GameComponent implements OnInit, OnDestroy {
     this.playerId = this.playerSession.getPlayerId(this.joinCode);
 
     if (!this.playerId) {
-      this.router.navigate(["/join", this.joinCode]);
+      this.router.navigate(["/bingo/join", this.joinCode]);
       return;
     }
 

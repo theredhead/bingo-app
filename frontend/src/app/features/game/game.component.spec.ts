@@ -169,7 +169,7 @@ describe("GameComponent", () => {
 
     fixture.detectChanges();
 
-    expect(router.navigate).toHaveBeenCalledWith(["/join", "ABC123"]);
+    expect(router.navigate).toHaveBeenCalledWith(["/bingo/join", "ABC123"]);
     expect(apiService.getGame).not.toHaveBeenCalled();
   });
 
