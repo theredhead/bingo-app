@@ -204,6 +204,48 @@ describe("GamesService", () => {
     expect(joined.card?.[0][0]).toBe("F1");
   });
 
+  it("builds a snapshot when joinedAt values come back as strings", async () => {
+    mockBingoService.generateCard
+      .mockResolvedValueOnce([
+        ["A1", "A2", "A3", "A4", "A5"],
+        ["B1", "B2", "B3", "B4", "B5"],
+        ["C1", "C2", "FREE", "C4", "C5"],
+        ["D1", "D2", "D3", "D4", "D5"],
+        ["E1", "E2", "E3", "E4", "E5"],
+      ])
+      .mockResolvedValueOnce([
+        ["F1", "F2", "F3", "F4", "F5"],
+        ["G1", "G2", "G3", "G4", "G5"],
+        ["H1", "H2", "FREE", "H4", "H5"],
+        ["I1", "I2", "I3", "I4", "I5"],
+        ["J1", "J2", "J3", "J4", "J5"],
+      ]);
+
+    const created = await service.createGame({
+      wordlistId: "wordlist-1",
+      hostName: "Host",
+    });
+
+    await service.joinGame(created.game.joinCode, {
+      displayName: "Guest",
+    });
+
+    for (const [id, player] of playerStore.entries()) {
+      playerStore.set(id, {
+        ...player,
+        joinedAt: player.joinedAt.toISOString() as unknown as Date,
+      });
+    }
+
+    const snapshot = await service.getGame(created.game.joinCode);
+
+    expect(snapshot.players).toHaveLength(2);
+    expect(snapshot.players.map((player) => player.displayName)).toEqual([
+      "Host",
+      "Guest",
+    ]);
+  });
+
   it("returns the same stored player session when the player reconnects later", async () => {
     mockBingoService.generateCard.mockResolvedValue([
       ["A1", "A2", "A3", "A4", "A5"],

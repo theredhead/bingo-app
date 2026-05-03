@@ -267,7 +267,8 @@ export class GamesService {
 
   private buildSnapshot(game: Game, playerId?: string): GameSnapshot {
     const players = [...(game.players ?? [])].sort(
-      (left, right) => left.joinedAt.getTime() - right.joinedAt.getTime(),
+      (left, right) =>
+        this.toTimestamp(left.joinedAt) - this.toTimestamp(right.joinedAt),
     );
     const currentPlayer = playerId
       ? players.find((player) => player.id === playerId)
@@ -290,7 +291,7 @@ export class GamesService {
         id: player.id,
         displayName: player.displayName,
         isHost: player.isHost,
-        joinedAt: player.joinedAt,
+        joinedAt: this.toDate(player.joinedAt),
         placement: player.placement,
       })),
       playerId: currentPlayer?.id,
@@ -301,11 +302,24 @@ export class GamesService {
             id: winner.id,
             displayName: winner.displayName,
             isHost: winner.isHost,
-            joinedAt: winner.joinedAt,
+            joinedAt: this.toDate(winner.joinedAt),
           }
         : undefined,
       canStart: !!currentPlayer?.isHost && game.status === "pending",
     };
+  }
+
+  private toTimestamp(value: Date | string): number {
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  private toDate(value: Date | string): Date {
+    return value instanceof Date ? value : new Date(value);
   }
 
   private hasBingo(card: string[][], stampedKeys: Set<string>): boolean {
