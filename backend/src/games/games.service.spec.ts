@@ -61,6 +61,12 @@ describe("GamesService", () => {
       );
       return cloneGame({ ...game, players });
     }),
+    update: jest.fn(async (id: string, partial: Partial<Game>) => {
+      const existing = gameStore.get(id);
+      if (existing) {
+        gameStore.set(id, { ...existing, ...partial });
+      }
+    }),
   };
 
   const mockPlayerRepo = {
@@ -120,6 +126,7 @@ describe("GamesService", () => {
     mockGameRepo.create.mockClear();
     mockGameRepo.save.mockClear();
     mockGameRepo.findOne.mockClear();
+    mockGameRepo.update.mockClear();
     mockPlayerRepo.create.mockClear();
     mockPlayerRepo.save.mockClear();
     mockPlayerRepo.findOne.mockClear();

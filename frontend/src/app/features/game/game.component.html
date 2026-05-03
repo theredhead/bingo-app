@@ -40,6 +40,11 @@
         </div>
       </div>
     } @else if (data.game.status === 'completed') {
+      <div class="confetti-layer" aria-hidden="true">
+        @for (piece of confettiPieces; track piece) {
+          <span class="confetti-piece"></span>
+        }
+      </div>
       <section class="game-over panel">
         <p class="kicker">Game Over</p>
         @if (getWinner(data.players); as winner) {

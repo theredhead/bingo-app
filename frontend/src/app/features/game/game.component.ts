@@ -27,6 +27,7 @@ export class GameComponent implements OnInit, OnDestroy {
   readonly error = signal("");
   readonly snapshot = signal<HostedGameSnapshot | null>(null);
   readonly qrCodeUrl = signal("");
+  readonly confettiPieces = Array.from({ length: 60 }, (_, i) => i);
   joinCode = "";
   private playerId = "";
   private eventSubscription?: Subscription;

@@ -138,8 +138,7 @@ export class GamesService {
       throw new BadRequestException("Only the host can start the game");
     }
 
-    await this.gameRepo.save({
-      ...game,
+    await this.gameRepo.update(game.id, {
       status: "active",
       startedAt: new Date(),
     });
@@ -228,8 +227,7 @@ export class GamesService {
         });
       }
 
-      await this.gameRepo.save({
-        ...freshGame,
+      await this.gameRepo.update(freshGame.id, {
         status: "completed",
         endedAt: new Date(),
         winnerPlayerId: winner.id,
