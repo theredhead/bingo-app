@@ -95,6 +95,11 @@ describe("GameComponent", () => {
     },
   };
 
+  const completedLoserSnapshot: HostedGameSnapshot = {
+    ...completedSnapshot,
+    playerId: "player-2",
+  };
+
   const waitingSnapshot: HostedGameSnapshot = {
     ...pendingSnapshot,
     players: [
@@ -203,7 +208,8 @@ describe("GameComponent", () => {
   });
 
   it("renders a dedicated game over screen instead of the live game header", async () => {
-    apiService.getGame.mockReturnValue(of(completedSnapshot));
+    playerSession.getPlayerId.mockReturnValue("player-2");
+    apiService.getGame.mockReturnValue(of(completedLoserSnapshot));
 
     fixture.detectChanges();
     await fixture.whenStable();
@@ -213,6 +219,39 @@ describe("GameComponent", () => {
     expect(content).toContain("Host wins!");
     expect(content).toContain("Runners-up");
     expect(content).not.toContain("Live Game");
+  });
+
+  it("plays winner effects when this device is the winner", async () => {
+    apiService.getGame.mockReturnValue(of(activeSnapshot));
+    const playVictorySoundSpy = vi
+      .spyOn(component as any, "playVictorySound")
+      .mockImplementation(() => {});
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    events$.next(completedSnapshot);
+    await fixture.whenStable();
+
+    expect(playVictorySoundSpy).toHaveBeenCalledTimes(1);
+    expect(component.celebrationToken()).toBe(1);
+  });
+
+  it("does not play winner effects on non-winning devices", async () => {
+    playerSession.getPlayerId.mockReturnValue("player-2");
+    apiService.getGame.mockReturnValue(of(activeSnapshot));
+    const playVictorySoundSpy = vi
+      .spyOn(component as any, "playVictorySound")
+      .mockImplementation(() => {});
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    events$.next(completedLoserSnapshot);
+    await fixture.whenStable();
+
+    expect(playVictorySoundSpy).not.toHaveBeenCalled();
+    expect(component.celebrationToken()).toBe(0);
   });
 
   it("toggles a stamp on an active game cell", () => {

@@ -1,15 +1,15 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "path";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Trust proxy headers from Nginx Proxy Manager
-  app.set('trust proxy', true);
+  app.set("trust proxy", true);
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -22,20 +22,20 @@ async function bootstrap() {
 
   // CORS configuration
   const configService = app.get(ConfigService);
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const frontendUrl = configService.get<string>("FRONTEND_URL");
   app.enableCors({
-    origin: frontendUrl || '*',
+    origin: frontendUrl || "*",
     credentials: true,
   });
 
   // Serve Angular index.html for client-side routes (e.g. /games/ABCD)
-  const indexPath = join(__dirname, '..', 'public', 'browser', 'index.html');
+  const indexPath = join(__dirname, "..", "public", "browser", "index.html");
   app.use((req: any, res: any, next: any) => {
-    const path = req.path ?? req.url ?? '';
-    const isApi = path.startsWith('/api');
-    const isAssetRequest = path.includes('.');
+    const path = req.path ?? req.url ?? "";
+    const isApi = path.startsWith("/api");
+    const isAssetRequest = path.includes(".");
 
-    if (req.method === 'GET' && !isApi && !isAssetRequest) {
+    if (req.method === "GET" && !isApi && !isAssetRequest) {
       return res.sendFile(indexPath, (error: Error | null) => {
         if (error) {
           return res.status(503).send(`<!doctype html>
@@ -69,7 +69,7 @@ async function bootstrap() {
     return next();
   });
 
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>("PORT", 3000);
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
 }

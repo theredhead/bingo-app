@@ -33,7 +33,7 @@ import { GamesModule } from "./games/games.module";
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => [
         {
-          rootPath: join(__dirname, "..", "public"),
+          rootPath: join(__dirname, "..", "public", "browser"),
           exclude: ["/api/(.*)"],
           serveStaticOptions: {
             fallthrough: true,

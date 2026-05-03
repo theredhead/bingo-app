@@ -1,0 +1,19 @@
+@if (active && pieces().length > 0) {
+  <div class="confetti-layer" aria-hidden="true">
+    @for (piece of pieces(); track piece.id) {
+      <span
+        class="confetti-piece"
+        [class.confetti-circle]="piece.shape === 'circle'"
+        [class.confetti-strip]="piece.shape === 'strip'"
+        [style.left.%]="piece.left"
+        [style.width.px]="piece.width"
+        [style.height.px]="piece.height"
+        [style.background]="piece.color"
+        [style.animationDelay.ms]="piece.delayMs"
+        [style.animationDuration.ms]="piece.durationMs"
+        [style.--confetti-drift]="piece.driftPx + 'px'"
+        [style.--confetti-spin]="piece.spinDeg + 'deg'"
+      ></span>
+    }
+  </div>
+}

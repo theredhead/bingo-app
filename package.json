@@ -9,7 +9,8 @@
     "dev:backend": "cd backend && npm run start:dev",
     "dev:frontend": "cd frontend && npm start",
     "build": "cd backend && npm run build && cd ../frontend && npm run build",
-    "test": "cd backend && npm test && cd frontend && npm test"
+    "test": "cd backend && npm test && cd frontend && npm test",
+    "docker:publish": "docker buildx build --platform linux/amd64,linux/arm64 -t theredhead/bingo-game:latest --push ."
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

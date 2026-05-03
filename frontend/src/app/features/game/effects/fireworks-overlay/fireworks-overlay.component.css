@@ -1,0 +1,90 @@
+.fireworks-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 101;
+}
+
+.firework-burst {
+  position: absolute;
+  width: var(--firework-size);
+  height: var(--firework-size);
+  margin-left: calc(var(--firework-size) / -2);
+  margin-top: calc(var(--firework-size) / -2);
+  animation: firework-pop ease-out forwards;
+  opacity: 0;
+}
+
+.firework-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--firework-color);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--firework-color) 70%, white 30%);
+  animation: firework-core-fade ease-out forwards;
+  animation-duration: inherit;
+}
+
+.firework-ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: calc(var(--firework-size) * 0.34);
+  margin-left: -2px;
+  transform-origin: 50% 0%;
+  transform: rotate(var(--ray-angle)) translateY(calc(var(--firework-size) * -0.12));
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--firework-color) 82%, white 18%) 0%,
+    color-mix(in srgb, var(--firework-color) 65%, transparent 35%) 55%,
+    transparent 100%
+  );
+  animation: firework-ray-expand ease-out forwards;
+  animation-duration: inherit;
+}
+
+@keyframes firework-pop {
+  0% {
+    transform: scale(0.08);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes firework-ray-expand {
+  0% {
+    opacity: 0;
+    height: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    height: calc(var(--firework-size) * 0.48);
+    opacity: 0;
+  }
+}
+
+@keyframes firework-core-fade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.65);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+}

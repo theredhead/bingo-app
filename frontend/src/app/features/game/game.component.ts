@@ -7,11 +7,18 @@ import { GameEventsService } from "../../core/game-events.service";
 import { HostedGamePlayer, HostedGameSnapshot } from "../../core/models";
 import { PlayerSessionService } from "../../core/player-session.service";
 import { QrCodeService } from "../../core/qr-code.service";
+import { ConfettiOverlayComponent } from "./effects/confetti-overlay/confetti-overlay.component";
+import { FireworksOverlayComponent } from "./effects/fireworks-overlay/fireworks-overlay.component";
 
 @Component({
   selector: "app-game",
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ConfettiOverlayComponent,
+    FireworksOverlayComponent,
+  ],
   templateUrl: "./game.component.html",
   styleUrl: "./game.component.css",
 })
@@ -27,10 +34,12 @@ export class GameComponent implements OnInit, OnDestroy {
   readonly error = signal("");
   readonly snapshot = signal<HostedGameSnapshot | null>(null);
   readonly qrCodeUrl = signal("");
-  readonly confettiPieces = Array.from({ length: 60 }, (_, i) => i);
+  readonly celebrationToken = signal(0);
   joinCode = "";
   private playerId = "";
   private eventSubscription?: Subscription;
+  private audioCtx: AudioContext | null = null;
+  private playedVictoryForGameId: string | null = null;
 
   ngOnInit(): void {
     this.joinCode = (
@@ -59,6 +68,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.eventSubscription?.unsubscribe();
+    this.audioCtx?.close();
   }
 
   startGame(): void {
@@ -124,6 +134,14 @@ export class GameComponent implements OnInit, OnDestroy {
     return `${placement}${suffix}`;
   }
 
+  isWinnerDevice(snapshot: HostedGameSnapshot): boolean {
+    return (
+      snapshot.game.status === "completed" &&
+      !!snapshot.playerId &&
+      snapshot.game.winnerPlayerId === snapshot.playerId
+    );
+  }
+
   private loadSnapshot(): void {
     this.loading.set(true);
     this.error.set("");
@@ -140,8 +158,10 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   private applySnapshot(snapshot: HostedGameSnapshot): void {
+    const previous = this.snapshot();
     this.snapshot.set(snapshot);
     this.loading.set(false);
+    this.applyWinnerEffects(previous, snapshot);
     void this.renderQrCode();
   }
 
@@ -159,6 +179,63 @@ export class GameComponent implements OnInit, OnDestroy {
       this.qrCodeUrl.set(dataUrl);
     } catch {
       this.qrCodeUrl.set("");
+    }
+  }
+
+  private applyWinnerEffects(
+    previous: HostedGameSnapshot | null,
+    snapshot: HostedGameSnapshot,
+  ): void {
+    if (!this.isWinnerDevice(snapshot)) {
+      return;
+    }
+
+    const enteredCompletedState =
+      previous?.game.status !== "completed" ||
+      previous.game.id !== snapshot.game.id;
+    const alreadyPlayed = this.playedVictoryForGameId === snapshot.game.id;
+
+    if (enteredCompletedState && !alreadyPlayed) {
+      this.playedVictoryForGameId = snapshot.game.id;
+      this.triggerCelebration();
+      this.playVictorySound();
+    }
+  }
+
+  private triggerCelebration(): void {
+    this.celebrationToken.update((value) => value + 1);
+  }
+
+  private playVictorySound(): void {
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      this.audioCtx?.close();
+      this.audioCtx = new AudioCtx();
+      const ctx = this.audioCtx;
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+
+      notes.forEach((freq, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.value = freq;
+        osc.type = "triangle";
+
+        const start = ctx.currentTime + index * 0.13;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.28, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
+
+        osc.start(start);
+        osc.stop(start + 0.45);
+      });
+    } catch {
+      // Audio can be blocked in browsers without user gesture.
     }
   }
 }

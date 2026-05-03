@@ -40,17 +40,16 @@
         </div>
       </div>
     } @else if (data.game.status === 'completed') {
-      <div class="confetti-layer" aria-hidden="true">
-        @for (piece of confettiPieces; track piece) {
-          <span class="confetti-piece"></span>
-        }
-      </div>
+      @if (isWinnerDevice(data)) {
+        <app-confetti-overlay [active]="true" [token]="celebrationToken()" />
+        <app-fireworks-overlay [active]="true" [token]="celebrationToken()" />
+      }
       <section class="game-over panel">
         <p class="kicker">Game Over</p>
         @if (getWinner(data.players); as winner) {
           <h1>{{ winner.displayName }} wins!</h1>
           <p class="copy game-over-copy">
-            {{ winner.displayName }} called bingo first and closed out game {{ data.game.joinCode }}.
+            {{ winner.displayName }} called bingo first and won the game!.
           </p>
           <div class="winner-hero">
             <span class="placement-badge champion-badge">{{ getPlacementLabel(winner.placement) }}</span>

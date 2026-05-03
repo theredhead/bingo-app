@@ -1,0 +1,20 @@
+@if (active && bursts().length > 0) {
+  <div class="fireworks-layer" aria-hidden="true">
+    @for (burst of bursts(); track burst.id) {
+      <div
+        class="firework-burst"
+        [style.left.%]="burst.left"
+        [style.top.%]="burst.top"
+        [style.--firework-size]="burst.sizePx + 'px'"
+        [style.--firework-color]="burst.color"
+        [style.animationDelay.ms]="burst.delayMs"
+        [style.animationDuration.ms]="burst.durationMs"
+      >
+        <span class="firework-core"></span>
+        @for (angle of rayAngles; track angle) {
+          <span class="firework-ray" [style.--ray-angle]="angle + 'deg'"></span>
+        }
+      </div>
+    }
+  </div>
+}
