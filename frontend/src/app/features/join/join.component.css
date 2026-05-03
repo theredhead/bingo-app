@@ -1,0 +1,69 @@
+.setup-shell {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+}
+
+.setup-card {
+  width: min(540px, 100%);
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.kicker {
+  color: var(--highlight);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(2rem, 7vw, 3.3rem);
+  line-height: 0.95;
+}
+
+.copy {
+  color: var(--muted);
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field span {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.field input {
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font: inherit;
+}
+
+.primary-btn {
+  min-height: 48px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primary-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.error {
+  color: #9f2f2f;
+}

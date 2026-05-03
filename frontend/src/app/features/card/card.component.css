@@ -1,0 +1,172 @@
+.card-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0.75rem 0 1.5rem;
+}
+
+.card-header {
+  margin-bottom: 0.9rem;
+}
+
+.eyebrow {
+  color: var(--highlight);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+h2 {
+  margin-top: 0.25rem;
+  font-size: clamp(1.6rem, 7.5vw, 2.8rem);
+  line-height: 1;
+}
+
+.card-note {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.bingo-banner {
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  background: var(--highlight);
+  color: white;
+  border-radius: var(--radius);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: banner-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes banner-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.bingo-card {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow);
+  transition: border-color 0.3s ease;
+}
+
+.card-won {
+  border-color: var(--highlight);
+}
+
+.bingo-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+}
+
+.bingo-cell {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.2rem;
+  text-align: center;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.78);
+  min-height: 56px;
+  width: 100%;
+  word-break: break-word;
+  line-height: 1.1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.bingo-cell:active {
+  transform: scale(0.96);
+}
+
+.cell-text {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.stamp-mark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  font-weight: 900;
+  color: #2c6b44;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.stamped {
+  background: #dcecdf;
+  border-color: #2c6b44;
+  box-shadow: inset 0 0 0 2px #2c6b44;
+}
+
+.free-cell {
+  background: var(--highlight);
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.free-cell .stamp-mark {
+  color: white;
+  opacity: 0.6;
+}
+
+.free-cell.stamped {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+@media (min-width: 700px) {
+  .card-container {
+    padding-top: 1rem;
+  }
+
+  .bingo-card {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .bingo-row {
+    gap: 0.5rem;
+  }
+
+  .bingo-cell {
+    font-size: 0.8rem;
+    min-height: 64px;
+  }
+}

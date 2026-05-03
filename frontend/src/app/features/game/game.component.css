@@ -1,0 +1,225 @@
+.game-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.lobby-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.2rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.kicker {
+  color: var(--highlight);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 7vw, 3rem);
+  line-height: 0.95;
+}
+
+.copy,
+.join-link {
+  color: var(--muted);
+}
+
+.join-link {
+  overflow-wrap: anywhere;
+}
+
+.qr {
+  width: min(220px, 100%);
+  aspect-ratio: 1;
+  border-radius: 16px;
+  background: white;
+}
+
+.primary-btn,
+.home-link {
+  min-height: 48px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  text-decoration: none;
+}
+
+.roster ul {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.roster li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.winner-banner {
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--highlight) 0%, #1a5c2e 100%);
+  color: white;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: pulse-banner 0.6s ease-out;
+}
+
+@keyframes pulse-banner {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.game-header {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.bingo-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: var(--shadow);
+}
+
+.bingo-card.locked {
+  opacity: 0.88;
+}
+
+.bingo-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.45rem;
+}
+
+.bingo-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 56px;
+  display: grid;
+  place-items: center;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.cell-text {
+  position: relative;
+  z-index: 1;
+}
+
+.stamp-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #2c6b44;
+  opacity: 1;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
+  z-index: 2;
+}
+
+.stamped {
+  background: #dcecdf;
+  border-color: #2c6b44;
+  box-shadow: inset 0 0 0 2px #2c6b44;
+}
+
+.free-cell {
+  background: var(--highlight);
+  color: white;
+}
+
+.free-cell .stamp-mark {
+  color: white;
+  opacity: 1;
+  text-shadow: 0 0 2px rgba(44, 107, 68, 0.3);
+}
+
+.error {
+  color: #9f2f2f;
+}
+
+.rankings-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.2rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.ranking-entry {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.placement-badge {
+  min-width: 3rem;
+  display: inline-grid;
+  place-items: center;
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 50%;
+  background: var(--highlight);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 800px) {
+  .lobby-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+
+  .bingo-cell {
+    min-height: 72px;
+    font-size: 0.84rem;
+  }
+}

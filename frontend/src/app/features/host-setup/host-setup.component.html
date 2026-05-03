@@ -1,0 +1,23 @@
+<section class="setup-shell">
+  <div class="setup-card">
+    <p class="kicker">Host Game</p>
+    <h1>Pick your name and open the lobby</h1>
+    <p class="copy">
+      You'll get a shareable link and QR code for everyone else to join before the
+      game starts.
+    </p>
+
+    <label class="field">
+      <span>Your name</span>
+      <input [(ngModel)]="playerName" maxlength="40" placeholder="Enter your name" />
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="button" class="primary-btn" [disabled]="loading()" (click)="createGame()">
+      {{ loading() ? "Creating game..." : "Create Lobby" }}
+    </button>
+  </div>
+</section>

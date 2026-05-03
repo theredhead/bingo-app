@@ -1,0 +1,22 @@
+<section class="setup-shell">
+  <div class="setup-card">
+    <p class="kicker">Join Game</p>
+    <h1>Enter your name to join {{ joinCode }}</h1>
+    <p class="copy">
+      Your name is remembered on this device so you can jump back in faster next time.
+    </p>
+
+    <label class="field">
+      <span>Your name</span>
+      <input [(ngModel)]="playerName" maxlength="40" placeholder="Enter your name" />
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="button" class="primary-btn" [disabled]="loading()" (click)="joinGame()">
+      {{ loading() ? "Joining..." : "Join Lobby" }}
+    </button>
+  </div>
+</section>

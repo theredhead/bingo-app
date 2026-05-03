@@ -1,0 +1,83 @@
+<section class="game-shell">
+  @if (loading()) {
+    <div class="panel">Loading game...</div>
+  } @else if (error()) {
+    <div class="panel error">{{ error() }}</div>
+  } @else if (snapshot(); as data) {
+    @if (data.game.status === 'pending') {
+      <div class="lobby-grid">
+        <div class="panel intro">
+          <p class="kicker">Lobby</p>
+          <h1>Game {{ data.game.joinCode }}</h1>
+          <p class="copy">
+            Share this link or QR code. Everyone joining before the start button is pressed
+            will enter the same game.
+          </p>
+          <a class="join-link" [href]="joinUrl">{{ joinUrl }}</a>
+          <img class="qr" [src]="qrCodeUrl()" alt="QR code for joining the game" />
+
+          @if (data.canStart) {
+            <button type="button" class="primary-btn" (click)="startGame()">
+              Start Game
+            </button>
+          }
+        </div>
+
+        <div class="panel roster">
+          <p class="kicker">Players</p>
+          <ul>
+            @for (player of data.players; track player.id) {
+              <li>
+                <span>{{ player.displayName }}</span>
+                @if (player.isHost) {
+                  <strong>Host</strong>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    } @else {
+      @if (data.game.status === 'completed') {
+        <div class="rankings-panel">
+          <p class="kicker">Final Rankings</p>
+          @for (player of getPlacedPlayers(data.players); track player.id) {
+            <div class="ranking-entry">
+              <span class="placement-badge">{{ getPlacementLabel(player.placement) }}</span>
+              <span>{{ player.displayName }}</span>
+            </div>
+          }
+        </div>
+      }
+      <div class="panel game-header">
+        <div>
+          <p class="kicker">Live Game</p>
+          <h1>{{ data.game.joinCode }}</h1>
+        </div>
+        <a routerLink="/" class="home-link">Back home</a>
+      </div>
+
+      <div class="bingo-card" [class.locked]="data.game.status === 'completed'">
+        @for (row of data.card ?? []; track $index; let rowIndex = $index) {
+          <div class="bingo-row">
+            @for (cell of row; track $index; let colIndex = $index) {
+              <button
+                type="button"
+                class="bingo-cell"
+                [class.free-cell]="cell === 'FREE'"
+                [class.stamped]="isStamped(rowIndex, colIndex, cell)"
+                [disabled]="data.game.status === 'completed'"
+                (click)="toggleStamp(rowIndex, colIndex, cell)"
+              >
+                <span class="cell-text">{{ cell }}</span>
+                @if (isStamped(rowIndex, colIndex, cell)) {
+                  <span class="stamp-mark" aria-hidden="true">✓</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</section>

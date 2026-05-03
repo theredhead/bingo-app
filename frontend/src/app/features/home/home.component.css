@@ -1,0 +1,145 @@
+.hero {
+  width: min(800px, 100%);
+  margin: 1.5rem auto 1.25rem;
+  padding: 1rem 0 0.5rem;
+}
+
+.eyebrow {
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+h1 {
+  margin-top: 0.35rem;
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+  line-height: 0.95;
+  max-width: 11ch;
+}
+
+.lede {
+  max-width: 52ch;
+  margin-top: 0.9rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.home-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0.25rem 0 1rem;
+}
+
+.join-panel {
+  display: grid;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(135deg, rgba(255, 239, 204, 0.75), rgba(255, 255, 255, 0.9));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.join-panel h2 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.join-actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.join-actions input {
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font: inherit;
+}
+
+.join-error {
+  color: #9f2f2f;
+}
+
+.wordlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.1rem;
+}
+
+.wordlist-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card-kicker {
+  color: var(--highlight);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.card-copy {
+  color: var(--muted);
+}
+
+.generate-btn {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1rem;
+  min-height: 48px;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.generate-btn:active {
+  background: var(--accent-strong);
+  transform: translateY(1px);
+}
+
+.loading,
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 600px) {
+  .hero {
+    margin-top: 1rem;
+  }
+
+  .wordlist-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 640px) {
+  .join-actions {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+}

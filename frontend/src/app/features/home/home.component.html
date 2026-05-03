@@ -1,0 +1,48 @@
+<section class="hero">
+  <h1>Bingo</h1>
+  <p class="lede">
+    Host a themed bingo game, then bring other players in with a join link or QR code.
+  </p>
+</section>
+
+<div class="home-container">
+  <section class="join-panel">
+    <div>
+      <p class="card-kicker">Join Existing Game</p>
+      <h2>Already have a code?</h2>
+    </div>
+    <div class="join-actions">
+      <input [(ngModel)]="joinCode" placeholder="Enter join code" maxlength="12" />
+      <button class="generate-btn" type="button" (click)="joinExistingGame()">
+        Join Game
+      </button>
+    </div>
+    @if (joinError()) {
+      <p class="join-error">{{ joinError() }}</p>
+    }
+  </section>
+
+  @if (loading()) {
+    <div class="loading">Loading wordlists...</div>
+  } @else if (error()) {
+    <div class="empty">{{ error() }}</div>
+  } @else if (wordlists().length === 0) {
+    <div class="empty">
+      No wordlists available yet. Seed data in the backend to continue.
+    </div>
+  } @else {
+    <div class="wordlist-grid">
+      @for (wordlist of wordlists(); track wordlist.id) {
+        <div class="wordlist-card">
+          <h3>{{ wordlist.name }}</h3>
+          <p class="card-copy">
+            {{ wordlist.description || "No description" }}
+          </p>
+          <button class="generate-btn" (click)="hostGame(wordlist.id)">
+            Host This Game
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
