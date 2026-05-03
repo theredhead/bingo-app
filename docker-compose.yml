@@ -1,0 +1,16 @@
+services:
+  bingo:
+    image: theredhead/bingo-game:latest
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_PATH=/data/db.sqlite
+      - FRONTEND_URL=${FRONTEND_URL:-}
+    volumes:
+      - bingo-data:/data
+    restart: unless-stopped
+
+volumes:
+  bingo-data:

@@ -1,0 +1,30 @@
+**/.git
+**/.gitignore
+**/.DS_Store
+
+# Dependencies (rebuilt in Docker)
+**/node_modules
+
+# Build artifacts
+backend/dist
+frontend/dist
+backend/public
+
+# Caches
+**/.angular
+**/.cache
+**/.tsbuildinfo
+**/*.tsbuildinfo
+**/.eslintcache
+
+# Local database and env
+**/*.sqlite
+**/*.sqlite-shm
+**/*.sqlite-wal
+**/.env
+**/.env.*
+
+# Docs / misc
+*.md
+plan.md
+agents.md
