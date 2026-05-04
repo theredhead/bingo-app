@@ -28,6 +28,226 @@ export class HoldemComponent implements OnInit, OnDestroy {
   player = signal<HoldemPlayer | null>(null);
   gameId = signal("");
   displayName = signal(localStorage.getItem("holdem.displayName") ?? "");
+  avatar = signal(localStorage.getItem("holdem.avatar") ?? "🎩");
+
+  readonly AVATARS = [
+    // Animals
+    "🦊",
+    "🐻",
+    "🐯",
+    "🦁",
+    "🐺",
+    "🦝",
+    "🐸",
+    "🐙",
+    "🦄",
+    "🐲",
+    "🦋",
+    "🐼",
+    "🐨",
+    "🦊",
+    "🦦",
+    "🦥",
+    "🐮",
+    "🐷",
+    "🐔",
+    "🐧",
+    "🦅",
+    "🦉",
+    "🦇",
+    "🐺",
+    "🐗",
+    "🦊",
+    "🐰",
+    "🐹",
+    "🐭",
+    "🐱",
+    "🐶",
+    "🦨",
+    "🦡",
+    "🦫",
+    "🦘",
+    "🦙",
+    "🐪",
+    "🦒",
+    "🦓",
+    "🦏",
+    "🐘",
+    "🦛",
+    "🦍",
+    "🦧",
+    "🐆",
+    "🐅",
+    "🐃",
+    "🦬",
+    "🦌",
+    "🐓",
+    "🦃",
+    "🦤",
+    "🦚",
+    "🦜",
+    "🦢",
+    "🦩",
+    "🐊",
+    "🐢",
+    "🦎",
+    "🐍",
+    "🐉",
+    "🦕",
+    "🦖",
+    "🦈",
+    "🐬",
+    "🐳",
+    "🦭",
+    "🦑",
+    "🦞",
+    "🦀",
+    "🐡",
+    "🐠",
+    // Faces & people
+    "👑",
+    "🤠",
+    "😎",
+    "🥷",
+    "👻",
+    "💀",
+    "👽",
+    "🤖",
+    "🧙",
+    "🧛",
+    "🧟",
+    "🧜",
+    "🧝",
+    "🧞",
+    "🧚",
+    "🧑‍🚀",
+    "🧑‍🎤",
+    "🧑‍🎨",
+    "🧑‍⚖️",
+    "🧑‍🍳",
+    "🧑‍🔬",
+    "🧑‍🏫",
+    "🧑‍🚒",
+    "🧑‍✈️",
+    "🥸",
+    "🤡",
+    "😈",
+    "👿",
+    "🤑",
+    "🤩",
+    "🥳",
+    "😤",
+    // Casino & cards
+    "🎩",
+    "🃏",
+    "🎰",
+    "🎲",
+    "♠️",
+    "♥️",
+    "♦️",
+    "♣️",
+    "🎯",
+    "🎭",
+    "🎪",
+    "🎠",
+    // Nature & elements
+    "🌵",
+    "🍀",
+    "🔥",
+    "⚡",
+    "💎",
+    "🌊",
+    "❄️",
+    "🌪️",
+    "🌙",
+    "☀️",
+    "🌈",
+    "⭐",
+    "🌟",
+    "💥",
+    "🍄",
+    "🌺",
+    "🌸",
+    "🌻",
+    "🌍",
+    "🪐",
+    "☄️",
+    "🌋",
+    "🏔️",
+    "🗻",
+    // Objects & misc
+    "🚀",
+    "🛸",
+    "⚔️",
+    "🛡️",
+    "🏆",
+    "💰",
+    "💣",
+    "🎸",
+    "🎺",
+    "🥁",
+    "🎻",
+    "🪗",
+    "🎷",
+    "🎙️",
+    "🎤",
+    "🎬",
+    "🧲",
+    "💡",
+    "🔮",
+    "🧿",
+    "🪬",
+    "🧸",
+    "🪆",
+    "🎎",
+    "🪅",
+    "🎑",
+    "🧧",
+    "🎀",
+    "🎁",
+    "🪄",
+    "🎃",
+    "🪩",
+    "🦺",
+    "🥊",
+    "🤿",
+    "🎿",
+    "🏋️",
+    "🤺",
+    "🧗",
+    "🏄",
+  ];
+
+  /** Extract the leading emoji from a displayName like "🦊 Kris" */
+  avatarOf(name: string): string {
+    if (!name) return "👤";
+    if (name.startsWith("Bot")) return "🤖";
+    const cp = name.codePointAt(0) ?? 0;
+    if (cp > 0x00ff) return String.fromCodePoint(cp);
+    return "👤";
+  }
+
+  /** Extract just the name part from "🦊 Kris" → "Kris" */
+  nameOf(name: string): string {
+    if (!name) return name;
+    const cp = name.codePointAt(0) ?? 0;
+    if (cp > 0x00ff)
+      return name.slice(String.fromCodePoint(cp).length).trimStart();
+    return name;
+  }
+
+  selectAvatar(emoji: string) {
+    this.avatar.set(emoji);
+    try {
+      localStorage.setItem("holdem.avatar", emoji);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Account balance (server-authoritative)
+  balance = signal<number | null>(null);
+  dailyBonusAwarded = signal(false);
 
   // Create options
   maxSeats = signal(6);
@@ -47,6 +267,9 @@ export class HoldemComponent implements OnInit, OnDestroy {
   // Winner banner
   winnerBannerVisible = signal(false);
   private lastShowdownKey = "";
+
+  // Tapped opponent seat (show detail on tap)
+  tappedSeatId = signal<string | null>(null);
 
   // Turn timer
   timeLeft = signal(0);
@@ -149,9 +372,49 @@ export class HoldemComponent implements OnInit, OnDestroy {
     return g.players.find((x) => x.id === p.id) ?? null;
   });
 
+  /** SVG coordinate positions (viewBox 0 0 400 575) for each opponent slot.
+   *  Seats arc 145°→35° just outside the wood rail (rx=158, ry=108, centre 200,235). */
+  readonly seatPositions = computed((): { x: number; y: number }[] => {
+    const g = this.game();
+    if (!g) return [];
+    const n = g.maxSeats - 1;
+    const cx = 200,
+      cy = 235,
+      rx = 158,
+      ry = 108;
+    const startDeg = 145,
+      endDeg = 35;
+    const result: { x: number; y: number }[] = [];
+    for (let i = 0; i < n; i++) {
+      const deg = n === 1 ? 90 : startDeg - (i / (n - 1)) * (startDeg - endDeg);
+      const rad = (deg * Math.PI) / 180;
+      result.push({
+        x: +(cx + rx * Math.cos(rad)).toFixed(1),
+        y: +(cy - ry * Math.sin(rad)).toFixed(1),
+      });
+    }
+    return result;
+  });
+
   constructor(private holdem: HoldemService) {
+    // Load balance on startup
+    this.holdem.getBalance().subscribe({
+      next: (r) => {
+        this.balance.set(r.balance);
+        if (r.dailyBonusAwarded) this.dailyBonusAwarded.set(true);
+      },
+    });
+
     effect(() => {
       if (this.step() === "landing") this.loadPublicTables();
+    });
+    // Lock body scroll when at the table; restore when leaving
+    effect(() => {
+      if (this.step() === "table") {
+        document.body.classList.add("game-mode");
+      } else {
+        document.body.classList.remove("game-mode");
+      }
     });
     // Timer syncs to server-stamped turnStartedAt — survives page reload
     effect(() => {
@@ -193,7 +456,7 @@ export class HoldemComponent implements OnInit, OnDestroy {
         if (key !== this.lastShowdownKey) {
           this.lastShowdownKey = key;
           this.winnerBannerVisible.set(true);
-          setTimeout(() => this.winnerBannerVisible.set(false), 3500);
+          setTimeout(() => this.winnerBannerVisible.set(false), 5000);
         }
       }
     });
@@ -233,9 +496,26 @@ export class HoldemComponent implements OnInit, OnDestroy {
     this.timeLeft.set(0);
   }
 
+  private leaveCurrentGame() {
+    const gid = this.gameId();
+    const pid = this.player()?.id;
+    if (gid && pid) {
+      // Use sendBeacon so it fires even when the tab is closing
+      navigator.sendBeacon(
+        `/api/holdem/${gid}/players/${pid}`,
+        new Blob([], { type: "application/json" }),
+      );
+    }
+  }
+
   ngOnDestroy() {
     this.stopTimer();
+    this.leaveCurrentGame();
+    document.body.classList.remove("game-mode");
+    window.removeEventListener("beforeunload", this._beforeUnload);
   }
+
+  private _beforeUnload = () => this.leaveCurrentGame();
 
   ngOnInit(): void {
     const gameId = this.route.snapshot.paramMap.get("gameId");
@@ -280,13 +560,37 @@ export class HoldemComponent implements OnInit, OnDestroy {
     this.error.set(null);
   }
   toLanding() {
-    this.router.navigate(["/holdem"]);
+    const gid = this.gameId();
+    const pid = this.player()?.id;
+
     this.step.set("landing");
     this.pendingJoinId.set(null);
     this.error.set(null);
     this.game.set(null);
     this.player.set(null);
+    this.router.navigate(["/holdem"]);
     this.loadPublicTables();
+
+    if (gid && pid) {
+      // Use proper HTTP DELETE so we can wait for the cash-out before refreshing balance
+      this.holdem.leaveGame(gid, pid).subscribe({
+        complete: () => {
+          this.holdem.getBalance().subscribe({
+            next: (r) => {
+              this.balance.set(r.balance);
+              if (r.dailyBonusAwarded) this.dailyBonusAwarded.set(true);
+            },
+          });
+        },
+      });
+    } else {
+      this.holdem.getBalance().subscribe({
+        next: (r) => {
+          this.balance.set(r.balance);
+          if (r.dailyBonusAwarded) this.dailyBonusAwarded.set(true);
+        },
+      });
+    }
   }
 
   createGame(event?: Event) {
@@ -311,6 +615,11 @@ export class HoldemComponent implements OnInit, OnDestroy {
       });
   }
 
+  sitHere() {
+    const g = this.game();
+    if (g) this.joinGame(g.id);
+  }
+
   joinGame(gameId: string) {
     this.loading.set(true);
     const storedPlayerId = this.loadSession(gameId);
@@ -318,11 +627,13 @@ export class HoldemComponent implements OnInit, OnDestroy {
     if (name) {
       try {
         localStorage.setItem("holdem.displayName", name);
+        localStorage.setItem("holdem.avatar", this.avatar());
       } catch {
         /* ignore */
       }
     }
-    this.holdem.joinGame(gameId, name, storedPlayerId).subscribe({
+    const fullName = this.avatar() + " " + name;
+    this.holdem.joinGame(gameId, fullName, storedPlayerId).subscribe({
       next: (player) => {
         this.player.set(player);
         this.saveSession(gameId, player.id);
@@ -466,6 +777,13 @@ export class HoldemComponent implements OnInit, OnDestroy {
     const rank = c[0] === "T" ? "10" : c[0];
     const suits: Record<string, string> = { h: "♥", d: "♦", c: "♣", s: "♠" };
     return rank + (suits[c[1]] ?? c[1]);
+  }
+
+  cardRank(c: string): string {
+    return this.formatCard(c).slice(0, -1);
+  }
+  cardSuit(c: string): string {
+    return this.formatCard(c).slice(-1);
   }
 
   isRedCard(c: string): boolean {

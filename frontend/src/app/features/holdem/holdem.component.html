@@ -5,6 +5,15 @@
   @if (step() === 'landing') {
     <div class="holdem-actions">
       <button class="primary-btn" (click)="toCreate()">+ Create Table</button>
+      @if (balance() !== null) {
+        @if (dailyBonusAwarded()) {
+          <span class="balance-pill bonus">🎉 Daily bonus! {{ balance() }} chips</span>
+        } @else if (balance()! <= 0) {
+          <span class="balance-pill broke">💸 No chips — come back in 24h for a bonus!</span>
+        } @else {
+          <span class="balance-pill">💰 {{ balance() }} chips</span>
+        }
+      }
     </div>
     <div class="public-tables">
       <h2>Open Tables</h2>
@@ -23,6 +32,11 @@
               </div>
               @if (pendingJoinId() === t.id) {
                 <div class="join-inline">
+                  <div class="avatar-picker">
+                    @for (e of AVATARS; track e) {
+                      <button type="button" class="avatar-option" [class.selected]="avatar() === e" (click)="selectAvatar(e)">{{ e }}</button>
+                    }
+                  </div>
                   <input
                     [value]="displayName()"
                     (input)="displayName.set($any($event.target).value)"
@@ -46,6 +60,13 @@
   @if (step() === 'create') {
     <form (submit)="createGame($event)" class="holdem-form">
       <div class="form-title">New Table</div>
+      <label>Your Avatar
+        <div class="avatar-picker">
+          @for (e of AVATARS; track e) {
+            <button type="button" class="avatar-option" [class.selected]="avatar() === e" (click)="selectAvatar(e)">{{ e }}</button>
+          }
+        </div>
+      </label>
       <label>Display Name
         <input [value]="displayName()" (input)="displayName.set($any($event.target).value)" name="displayName" required placeholder="How others see you" />
       </label>
@@ -90,148 +111,294 @@
         <!-- Header bar -->
         <div class="table-header">
           <span class="phase-badge" [attr.data-phase]="game()!.state.phase">{{ game()!.state.phase.toUpperCase() }}</span>
-          <span class="header-sep">·</span>
           <span class="pot-label">Pot: <strong>{{ game()!.state.pot }}</strong></span>
-          <span class="header-sep">·</span>
-          <span class="limit-label">{{ game()!.limitType }}</span>
+          @if (game()!.state.phase !== 'showdown' && game()!.state.phase !== 'waiting' && timeLeft() > 0) {
+            <span class="timer-label" [class.urgent]="timeLeft() <= 5">{{ timeLeft() }}s</span>
+          }
           <button class="leave-btn" (click)="toLanding()">Leave ✕</button>
         </div>
 
-        <!-- Seats: opponents above the table -->
-        <div class="seats opponents-row">
-          @for (p of opponentSeats(); track p?.id ?? $index) {
-            @if (p && p.isSeated) {
-              <div class="seat"
-                [class.active]="p.id === game()!.state.activePlayerId"
-                [class.folded]="p.isFolded"
-                [style.--timer-pct]="p.id === game()!.state.activePlayerId ? timerPct() : null"
-                [style.--timer-color]="p.id === game()!.state.activePlayerId && timeLeft() <= 5 ? '#c0392b' : null">
-                <div class="seat-name">
-                  @if (p.displayName.startsWith('Bot')) { <span>🤖</span> }
-                  {{ p.displayName }}
-                  @if (p.isHost) { <span class="host-badge">HOST</span> }
-                  @if (p.id === dealerPlayerId()) { <span class="pos-badge dealer-badge">D</span> }
-                  @if (p.id === sbPlayerId()) { <span class="pos-badge sb-badge">SB</span> }
-                  @if (p.id === bbPlayerId()) { <span class="pos-badge bb-badge">BB</span> }
-                </div>
-                <div class="seat-chips">💰 {{ p.chips }}</div>
-                @if ((game()!.state.bets?.[p.id] ?? 0) > 0) {
-                  <div class="seat-bet">Bet: {{ game()!.state.bets?.[p.id] }}</div>
-                }
-                @if (p.isFolded) { <div class="badge folded-badge">FOLDED</div> }
-                @if (p.isAllIn) { <div class="badge allin-badge">ALL IN</div> }
-                @if (p.displayName.startsWith('Bot') && p.id === game()!.state.activePlayerId && game()!.state.phase !== 'showdown') {
-                  <div class="badge thinking-badge">⌛ Thinking…</div>
-                }
-                @if (isHost() && p.displayName.startsWith('Bot')) {
-                  <button class="remove-bot-btn" (click)="removeBot(p.id)" title="Remove bot">×</button>
-                }
-              </div>
-            } @else {
-              <div class="seat empty" [class.host-empty]="isHost()" (click)="isHost() ? addBot() : null">
-                <div class="seat-name">{{ isHost() ? '+ Bot' : 'Empty' }}</div>
-              </div>
-            }
-          }
-        </div>
+        <!-- Pure SVG poker table — viewBox 400×575, portrait, no CSS positioning -->
+        <svg class="table-svg" viewBox="0 0 400 575" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="sg-felt" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="#27a85e"/>
+              <stop offset="100%" stop-color="#0d4a27"/>
+            </radialGradient>
+            <filter id="sg-drop" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0005"/>
+            </filter>
+          </defs>
 
-        <!-- Community board -->
-        <div class="board-area">
-          <div class="board-label">Community Cards</div>
-          <div class="board">
+          <!-- ── Wood rail + felt oval ── -->
+          <ellipse cx="200" cy="235" rx="152" ry="98" fill="#4a2a06" filter="url(#sg-drop)"/>
+          <ellipse cx="200" cy="235" rx="148" ry="94" fill="#8b5e1a"/>
+          <ellipse cx="200" cy="235" rx="144" ry="90" fill="#6e4912"/>
+          <ellipse cx="200" cy="235" rx="137" ry="83" fill="url(#sg-felt)"/>
+          <ellipse cx="200" cy="235" rx="137" ry="83" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"/>
+
+          <!-- ── Pot label ── -->
+          <text x="200" y="206" text-anchor="middle" font-size="13" font-weight="700"
+            fill="white" font-family="system-ui,sans-serif"
+            stroke="rgba(0,0,0,0.5)" stroke-width="3" paint-order="stroke fill">Pot: {{ game()!.state.pot }}</text>
+
+          <!-- ── Community cards / winner banner ── -->
+          @if (winnerBannerVisible() && game()!.state.winners?.length) {
+            <rect x="95" y="213" width="210" height="82" rx="10"
+              fill="rgba(0,0,0,0.65)" stroke="rgba(255,215,0,0.35)" stroke-width="1"/>
+            @for (w of game()!.state.winners!; track w.playerId) {
+              <text x="200" [attr.y]="229 + $index * 30" text-anchor="middle"
+                font-size="12" font-weight="700" fill="#ffd700" font-family="system-ui">🏆 {{ w.name }} +{{ w.amount }}</text>
+              <text x="200" [attr.y]="243 + $index * 30" text-anchor="middle"
+                font-size="10" fill="rgba(255,255,255,0.75)" font-family="system-ui">{{ w.hand }}</text>
+            }
+            <text x="200" y="287" text-anchor="middle" font-size="9"
+              fill="rgba(255,255,255,0.4)" font-family="system-ui"
+              style="cursor:pointer" (click)="winnerBannerVisible.set(false)">tap to dismiss</text>
+          } @else {
+            <!-- 5 board cards: 28×40 each, gap 4, centred at x=200 -->
             @for (c of game()!.state.board; track c) {
-              <span class="card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+              @let bx = 122 + $index * 32;
+              <rect [attr.x]="bx" y="222" width="28" height="40" rx="4"
+                fill="white" stroke="#ccc" stroke-width="1" filter="url(#sg-drop)"/>
+              <text [attr.x]="bx + 4" y="234" font-size="10" font-weight="700"
+                [attr.fill]="isRedCard(c) ? '#c0392b' : '#1a1a2e'" font-family="system-ui">{{ cardRank(c) }}</text>
+              <text [attr.x]="bx + 14" y="255" text-anchor="middle" font-size="16"
+                [attr.fill]="isRedCard(c) ? '#c0392b' : '#1a1a2e'" font-family="system-ui">{{ cardSuit(c) }}</text>
             }
             @for (_ of [].constructor(5 - game()!.state.board.length); track $index) {
-              <span class="card placeholder"></span>
+              @let bx = 122 + (game()!.state.board.length + $index) * 32;
+              <rect [attr.x]="bx" y="222" width="28" height="40" rx="4"
+                fill="rgba(0,0,0,0.15)" stroke="rgba(255,255,255,0.2)"
+                stroke-width="1" stroke-dasharray="4,2"/>
             }
-          </div>
-        </div>
+          }
 
-        <!-- Floating winner banner -->
-        @if (winnerBannerVisible() && game()!.state.winners?.length) {
-          <div class="winner-banner" (click)="winnerBannerVisible.set(false)">
-            @for (w of game()!.state.winners!; track w.playerId) {
-              <div class="winner-banner-title">
-                🏆 <strong>{{ w.name }}</strong> wins <span class="winner-chips">{{ w.amount }}</span> chips
-              </div>
-              <div class="winner-hand-name">{{ w.hand }}</div>
-              <div class="winner-cards">
-                @for (c of w.cards; track c) {
-                  <span class="card winner-hole" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+          <!-- ── Opponent seats — arc 145°→35° around table top ── -->
+          @for (p of opponentSeats(); track p?.id ?? $index; let i = $index) {
+            @let pos = seatPositions()[i];
+            @if (pos) {
+              @let isOppActive = (p?.id ?? '') === game()!.state.activePlayerId;
+              @let isFolded = p?.isFolded ?? false;
+              @let oppBet = p ? (game()!.state.bets?.[p.id] ?? 0) : 0;
+
+              <!-- Timer track -->
+              <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="29"
+                fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="3.5"/>
+              <!-- Timer ring (active player, stroke starts at top via rotate) -->
+              @if (isOppActive) {
+                <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="29"
+                  fill="none"
+                  [attr.stroke]="timeLeft() <= 5 ? '#e74c3c' : '#2ecc71'"
+                  stroke-width="3.5" stroke-linecap="round"
+                  stroke-dasharray="182.2"
+                  [attr.stroke-dashoffset]="182.2 * (1 - timerPct() / 100)"
+                  [attr.transform]="'rotate(-90 ' + pos.x + ' ' + pos.y + ')'"
+                  class="timer-ring"/>
+              }
+              <!-- Avatar circle -->
+              <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="24"
+                [attr.fill]="isFolded ? '#c8c4bc' : '#f0ece4'"
+                [attr.stroke]="isOppActive ? '#2ecc71' : (isFolded ? '#aaa' : '#c0bab2')"
+                [attr.stroke-width]="isOppActive ? 2.5 : 1.5"
+                [attr.opacity]="isFolded ? 0.55 : 1"
+                filter="url(#sg-drop)"/>
+
+              @if (p && p.isSeated) {
+                <text [attr.x]="pos.x" [attr.y]="pos.y + 14" text-anchor="middle"
+                  font-size="36" [attr.opacity]="isFolded ? 0.45 : 1">{{ avatarOf(p.displayName) }}</text>
+                <text [attr.x]="pos.x" [attr.y]="pos.y + 39" text-anchor="middle"
+                  font-size="11" font-weight="700" fill="#1a1a1a" font-family="system-ui"
+                  stroke="white" stroke-width="3" paint-order="stroke fill"
+                  [attr.opacity]="isFolded ? 0.5 : 1">{{ nameOf(p.displayName).length > 8 ? nameOf(p.displayName).slice(0,7) + '…' : nameOf(p.displayName) }}</text>
+                <text [attr.x]="pos.x" [attr.y]="pos.y + 52" text-anchor="middle"
+                  font-size="10" fill="#333" font-family="system-ui"
+                  stroke="white" stroke-width="3" paint-order="stroke fill">💰 {{ p.chips }}</text>
+
+                <!-- Bet chip above avatar -->
+                @if (oppBet > 0) {
+                  <circle [attr.cx]="pos.x" [attr.cy]="pos.y - 35" r="12" fill="#e67e22"/>
+                  <text [attr.x]="pos.x" [attr.y]="pos.y - 31" text-anchor="middle"
+                    font-size="9" font-weight="700" fill="white" font-family="system-ui">{{ oppBet }}</text>
                 }
-                @if (game()!.state.board.length) {
-                  <span class="winner-sep">+</span>
-                  @for (c of game()!.state.board; track c) {
-                    <span class="card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
-                  }
+                <!-- D/SB/BB badge -->
+                @if (p.id === dealerPlayerId()) {
+                  <circle [attr.cx]="pos.x + 21" [attr.cy]="pos.y - 19" r="9" fill="#f1c40f"/>
+                  <text [attr.x]="pos.x + 21" [attr.y]="pos.y - 15" text-anchor="middle" font-size="9" font-weight="700" fill="#333">D</text>
+                } @else if (p.id === sbPlayerId()) {
+                  <circle [attr.cx]="pos.x + 21" [attr.cy]="pos.y - 19" r="9" fill="#3498db"/>
+                  <text [attr.x]="pos.x + 21" [attr.y]="pos.y - 15" text-anchor="middle" font-size="8" font-weight="700" fill="white">SB</text>
+                } @else if (p.id === bbPlayerId()) {
+                  <circle [attr.cx]="pos.x + 21" [attr.cy]="pos.y - 19" r="9" fill="#9b59b6"/>
+                  <text [attr.x]="pos.x + 21" [attr.y]="pos.y - 15" text-anchor="middle" font-size="8" font-weight="700" fill="white">BB</text>
                 }
-              </div>
-            }
-            <div class="winner-dismiss">tap to dismiss · next hand starting…</div>
-          </div>
-        }
-
-        @if (mySeat(); as me) {
-          <div class="seat me-seat"
-            [class.active]="me.id === game()!.state.activePlayerId"
-            [class.folded]="me.isFolded"
-            [style.--timer-pct]="me.id === game()!.state.activePlayerId ? timerPct() : null"
-            [style.--timer-color]="me.id === game()!.state.activePlayerId && timeLeft() <= 5 ? '#c0392b' : null">
-            <div class="seat-name">
-              {{ me.displayName }}
-              @if (me.isHost) { <span class="host-badge">HOST</span> }
-              @if (me.id === dealerPlayerId()) { <span class="pos-badge dealer-badge">D</span> }
-              @if (me.id === sbPlayerId()) { <span class="pos-badge sb-badge">SB</span> }
-              @if (me.id === bbPlayerId()) { <span class="pos-badge bb-badge">BB</span> }
-            </div>
-            <div class="seat-chips">💰 {{ me.chips }}</div>
-            @if ((game()!.state.bets?.[me.id] ?? 0) > 0) {
-              <div class="seat-bet">Bet: {{ game()!.state.bets?.[me.id] }}</div>
-            }
-            @if (me.isFolded) { <div class="badge folded-badge">FOLDED</div> }
-            @if (me.isAllIn) { <div class="badge allin-badge">ALL IN</div> }
-            @if (me.cards.length) {
-              <div class="my-hole-cards">
-                @for (c of me.cards; track c) {
-                  <span class="card my-card" [class.red]="isRedCard(c)">{{ formatCard(c) }}</span>
+                <!-- FOLDED / ALL IN -->
+                @if (isFolded) {
+                  <text [attr.x]="pos.x" [attr.y]="pos.y - 35" text-anchor="middle"
+                    font-size="8" font-weight="700" fill="#e74c3c" font-family="system-ui"
+                    stroke="white" stroke-width="2" paint-order="stroke fill">FOLDED</text>
+                } @else if (p.isAllIn) {
+                  <text [attr.x]="pos.x" [attr.y]="pos.y - 35" text-anchor="middle"
+                    font-size="8" font-weight="700" fill="#e67e22" font-family="system-ui"
+                    stroke="white" stroke-width="2" paint-order="stroke fill">ALL IN</text>
                 }
-              </div>
+                <!-- Remove-bot button (host, when tapped) -->
+                @if (isHost() && p.displayName.startsWith('Bot') && tappedSeatId() === p.id) {
+                  <circle [attr.cx]="pos.x + 21" [attr.cy]="pos.y + 19" r="9" fill="#e74c3c"
+                    style="cursor:pointer" (click)="removeBot(p.id)"/>
+                  <text [attr.x]="pos.x + 21" [attr.y]="pos.y + 24" text-anchor="middle"
+                    font-size="13" font-weight="700" fill="white" style="cursor:pointer"
+                    (click)="removeBot(p.id)">×</text>
+                }
+                <!-- Invisible tap target -->
+                <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="30" fill="transparent"
+                  (click)="tappedSeatId.set(tappedSeatId() === p.id ? null : p.id)"/>
+              } @else {
+                <!-- Empty slot -->
+                <text [attr.x]="pos.x" [attr.y]="pos.y + 8" text-anchor="middle"
+                  font-size="18" fill="#aaa" opacity="0.5">{{ isHost() ? '➕' : '·' }}</text>
+                @if (isHost()) {
+                  <text [attr.x]="pos.x" [attr.y]="pos.y + 39" text-anchor="middle"
+                    font-size="10" fill="#888" font-family="system-ui" style="cursor:pointer"
+                    (click)="addBot()">Add Bot</text>
+                  <circle [attr.cx]="pos.x" [attr.cy]="pos.y" r="24" fill="transparent"
+                    (click)="addBot()"/>
+                }
+              }
             }
-          </div>
-        }
+          }
 
+          <!-- ── My seat: bottom center (200, 440) ── -->
+          @if (mySeat(); as me) {
+            @let myActive = me.id === game()!.state.activePlayerId;
+            @let myBet = game()!.state.bets?.[me.id] ?? 0;
 
-
-        <!-- Action log -->
-        @if (game()!.actions.length) {
-          <div class="action-log">
-            @for (a of game()!.actions.slice(-5); track $index) {
-              <span class="log-entry">{{ a.name }} {{ a.type }}{{ a.amount ? ' ' + a.amount : '' }}</span>
+            <!-- Timer track -->
+            <circle cx="200" cy="440" r="36" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="4"/>
+            <!-- Timer ring -->
+            @if (myActive) {
+              <circle cx="200" cy="440" r="36"
+                fill="none"
+                [attr.stroke]="timeLeft() <= 5 ? '#e74c3c' : '#2ecc71'"
+                stroke-width="4" stroke-linecap="round"
+                stroke-dasharray="226.2"
+                [attr.stroke-dashoffset]="226.2 * (1 - timerPct() / 100)"
+                transform="rotate(-90 200 440)"
+                class="timer-ring"/>
             }
-          </div>
-        }
+            <!-- Avatar -->
+            <circle cx="200" cy="440" r="30"
+              [attr.fill]="me.isFolded ? '#c8c4bc' : '#e8f5ee'"
+              [attr.stroke]="myActive ? '#2ecc71' : '#4a9e72'"
+              [attr.stroke-width]="myActive ? 3 : 2"
+              [attr.opacity]="me.isFolded ? 0.6 : 1"
+              filter="url(#sg-drop)"/>
+            <text x="200" y="455" text-anchor="middle" font-size="44">{{ avatarOf(me.displayName) }}</text>
 
-        <!-- Active player label + countdown (ring on seat is the primary indicator) -->
-        @if (game()!.state.phase !== 'showdown' && game()!.state.phase !== 'waiting' && timeLeft() > 0) {
-          <div class="turn-timer-wrap">
-            @let activeName = game()!.players.find(p => p.id === game()!.state.activePlayerId)?.displayName ?? '…';
-            <span class="timer-player-label" [class.my-turn]="isMyTurn()">
-              {{ isMyTurn() ? 'Your turn' : activeName }}
-            </span>
-            <span class="timer-label" [class.urgent]="timeLeft() <= 5">{{ timeLeft() }}s</span>
-          </div>
-        }
+            <!-- Name + chips -->
+            <text x="200" y="483" text-anchor="middle" font-size="13" font-weight="700"
+              fill="#1a1a1a" font-family="system-ui"
+              stroke="white" stroke-width="3" paint-order="stroke fill">{{ nameOf(me.displayName) }}</text>
+            <text x="200" y="498" text-anchor="middle" font-size="11" fill="#333"
+              font-family="system-ui"
+              stroke="white" stroke-width="3" paint-order="stroke fill">💰 {{ me.chips }}</text>
 
-        <!-- Action controls -->
+            <!-- Bet chip above avatar -->
+            @if (myBet > 0) {
+              <circle cx="200" cy="397" r="13" fill="#e67e22"/>
+              <text x="200" y="401" text-anchor="middle" font-size="9" font-weight="700"
+                fill="white" font-family="system-ui">{{ myBet }}</text>
+            }
+            <!-- D/SB/BB -->
+            @if (me.id === dealerPlayerId()) {
+              <circle cx="234" cy="422" r="10" fill="#f1c40f"/>
+              <text x="234" y="426" text-anchor="middle" font-size="9" font-weight="700" fill="#333">D</text>
+            } @else if (me.id === sbPlayerId()) {
+              <circle cx="234" cy="422" r="10" fill="#3498db"/>
+              <text x="234" y="426" text-anchor="middle" font-size="8" font-weight="700" fill="white">SB</text>
+            } @else if (me.id === bbPlayerId()) {
+              <circle cx="234" cy="422" r="10" fill="#9b59b6"/>
+              <text x="234" y="426" text-anchor="middle" font-size="8" font-weight="700" fill="white">BB</text>
+            }
+            <!-- FOLDED / ALL IN -->
+            @if (me.isFolded) {
+              <text x="200" y="397" text-anchor="middle" font-size="11" font-weight="700"
+                fill="#e74c3c" font-family="system-ui"
+                stroke="white" stroke-width="3" paint-order="stroke fill">FOLDED</text>
+            } @else if (me.isAllIn) {
+              <text x="200" y="397" text-anchor="middle" font-size="11" font-weight="700"
+                fill="#e67e22" font-family="system-ui"
+                stroke="white" stroke-width="3" paint-order="stroke fill">ALL IN</text>
+            }
+
+            <!-- Hole cards: 38×54 each, centred below name -->
+            @if (me.cards.length >= 2) {
+              <rect x="156" y="508" width="38" height="54" rx="5"
+                fill="white" stroke="#ddd" stroke-width="1.5" filter="url(#sg-drop)"/>
+              <text x="162" y="521" font-size="11" font-weight="700"
+                [attr.fill]="isRedCard(me.cards[0]) ? '#c0392b' : '#1a1a2e'"
+                font-family="system-ui">{{ cardRank(me.cards[0]) }}</text>
+              <text x="175" y="548" text-anchor="middle" font-size="21"
+                [attr.fill]="isRedCard(me.cards[0]) ? '#c0392b' : '#1a1a2e'"
+                font-family="system-ui">{{ cardSuit(me.cards[0]) }}</text>
+
+              <rect x="206" y="508" width="38" height="54" rx="5"
+                fill="white" stroke="#ddd" stroke-width="1.5" filter="url(#sg-drop)"/>
+              <text x="212" y="521" font-size="11" font-weight="700"
+                [attr.fill]="isRedCard(me.cards[1]) ? '#c0392b' : '#1a1a2e'"
+                font-family="system-ui">{{ cardRank(me.cards[1]) }}</text>
+              <text x="225" y="548" text-anchor="middle" font-size="21"
+                [attr.fill]="isRedCard(me.cards[1]) ? '#c0392b' : '#1a1a2e'"
+                font-family="system-ui">{{ cardSuit(me.cards[1]) }}</text>
+            } @else {
+              <rect x="156" y="508" width="38" height="54" rx="5"
+                fill="#e0dcd5" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <rect x="206" y="508" width="38" height="54" rx="5"
+                fill="#e0dcd5" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,3"/>
+            }
+          } @else {
+            <!-- Not seated: show Sit Here button -->
+            <circle cx="200" cy="440" r="36" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="3" stroke-dasharray="6,4"/>
+            <circle cx="200" cy="440" r="30" fill="rgba(255,255,255,0.55)" stroke="#4a9e72" stroke-width="2"
+              style="cursor:pointer" (click)="sitHere()"/>
+            <text x="200" y="434" text-anchor="middle" font-size="22" style="cursor:pointer" (click)="sitHere()">🪑</text>
+            <text x="200" y="452" text-anchor="middle" font-size="11" font-weight="700" fill="#2e7d52"
+              font-family="system-ui" stroke="white" stroke-width="3" paint-order="stroke fill"
+              style="cursor:pointer" (click)="sitHere()">Sit Here</text>
+          }
+
+        </svg>
+
+        <!-- Action controls: only shown when seated; disabled when folded -->
+        @let me = mySeat();
+        @let dealtIn = me && me.cards.length > 0;
+        @let isFolded = me?.isFolded ?? false;
         <div class="actions">
-          @if (game()!.state.phase === 'waiting') {
+          @let waiting = game()!.state.phase === 'waiting';
+
+          @if (waiting) {
             @if (isHost() && seatedPlayers().length >= 2) {
               <button class="primary-btn" (click)="startGame()">Start Hand</button>
+            } @else if (!me) {
+              <span class="waiting-label">Waiting to be dealt in…</span>
             } @else {
-              <div class="waiting-turn">Waiting for more players…</div>
+              <button class="action-btn fold-btn" disabled>Fold</button>
+              <button class="action-btn check-btn" disabled>Check</button>
+              <div class="raise-control">
+                <input type="number" [value]="raiseAmount()" disabled step="5" />
+                <button class="action-btn raise-btn" disabled>Bet</button>
+              </div>
             }
-          } @else if (isMyTurn() && game()!.state.phase !== 'showdown') {
+          } @else if (!dealtIn) {
+            <span class="waiting-label">Waiting to be dealt in…</span>
+          } @else if (game()!.state.phase === 'showdown' || isFolded) {
+            <button class="action-btn fold-btn" disabled>Fold</button>
+            <button class="action-btn check-btn" disabled>Check</button>
+            <div class="raise-control">
+              <input type="number" [value]="raiseAmount()" disabled step="5" />
+              <button class="action-btn raise-btn" disabled>Bet</button>
+            </div>
+          } @else if (isMyTurn()) {
             <button class="action-btn fold-btn" (click)="sendAction({ type: 'fold' })">Fold</button>
             @if (callAmount() === 0) {
               <button class="action-btn check-btn" (click)="sendAction({ type: 'check' })">Check</button>
@@ -251,29 +418,23 @@
                 {{ callAmount() === 0 ? 'Bet' : 'Raise to' }} {{ raiseAmount() }}
               </button>
             </div>
-          } @else if (game()!.state.phase !== 'showdown') {
-            <div class="waiting-turn">
-              Waiting for {{ game()!.players.find(p => p.id === game()!.state.activePlayerId)?.displayName ?? '…' }}
+          } @else {
+            <!-- Not my turn: same 3 slots — disabled or pre-action toggles -->
+            <button class="action-btn fold-btn"
+              [class.pre-selected]="preAction() === 'fold'"
+              [disabled]="!canPreAct()"
+              (click)="togglePreAction('fold')">Fold</button>
+            <button class="action-btn check-btn"
+              [class.pre-selected]="preAction() === 'check-fold'"
+              [disabled]="!canPreAct()"
+              (click)="togglePreAction('check-fold')">Check / Fold</button>
+            <div class="raise-control">
+              <input type="number" [value]="raiseAmount()" disabled step="5" />
+              <button class="action-btn call-btn raise-btn"
+                [class.pre-selected]="preAction() === 'call-any'"
+                [disabled]="!canPreAct()"
+                (click)="togglePreAction('call-any')">Call Any</button>
             </div>
-            @if (canPreAct()) {
-              <div class="pre-actions">
-                <button class="action-btn pre-btn"
-                  [class.pre-selected]="preAction() === 'check-fold'"
-                  (click)="togglePreAction('check-fold')">
-                  Check / Fold
-                </button>
-                <button class="action-btn pre-btn call-btn"
-                  [class.pre-selected]="preAction() === 'call-any'"
-                  (click)="togglePreAction('call-any')">
-                  Call Any
-                </button>
-                <button class="action-btn pre-btn fold-btn"
-                  [class.pre-selected]="preAction() === 'fold'"
-                  (click)="togglePreAction('fold')">
-                  Fold
-                </button>
-              </div>
-            }
           }
         </div>
 

@@ -51,6 +51,34 @@ export interface HoldemPlayer {
 export class HoldemService {
   constructor(private http: HttpClient) {}
 
+  /** Generates a UUID v4 using getRandomValues (works on HTTP, unlike randomUUID) */
+  private generateUUID(): string {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant bits
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
+      "",
+    );
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+
+  /** Returns the persistent account UUID stored in localStorage, creating one if needed */
+  getAccountId(): string {
+    let id = localStorage.getItem("holdem_account_id");
+    if (!id) {
+      id = this.generateUUID();
+      localStorage.setItem("holdem_account_id", id);
+    }
+    return id;
+  }
+
+  getBalance() {
+    return this.http.get<{ balance: number; dailyBonusAwarded?: boolean }>(
+      `/api/holdem/account/${this.getAccountId()}/balance`,
+    );
+  }
+
   getPublicGames() {
     return this.http.get<HoldemGame[]>("/api/holdem/public");
   }
@@ -62,6 +90,7 @@ export class HoldemService {
   joinGame(gameId: string, displayName: string, playerId?: string) {
     return this.http.post<HoldemPlayer>(`/api/holdem/${gameId}/join`, {
       displayName,
+      accountId: this.getAccountId(),
       ...(playerId ? { playerId } : {}),
     });
   }
@@ -80,6 +109,10 @@ export class HoldemService {
 
   addBot(gameId: string) {
     return this.http.post<HoldemGame>(`/api/holdem/${gameId}/bots`, {});
+  }
+
+  leaveGame(gameId: string, playerId: string) {
+    return this.http.delete(`/api/holdem/${gameId}/players/${playerId}`);
   }
 
   removeBot(gameId: string, botId: string) {

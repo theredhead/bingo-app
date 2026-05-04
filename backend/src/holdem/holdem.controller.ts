@@ -15,6 +15,11 @@ import { Observable, map } from "rxjs";
 export class HoldemController {
   constructor(private readonly holdemService: HoldemService) {}
 
+  @Get("account/:playerId/balance")
+  getBalance(@Param("playerId") playerId: string) {
+    return this.holdemService.getBalance(playerId);
+  }
+
   @Get("public")
   getPublicGames() {
     return this.holdemService.getPublicGames();
@@ -48,6 +53,14 @@ export class HoldemController {
   @Delete(":gameId/bots/:botId")
   removeBot(@Param("gameId") gameId: string, @Param("botId") botId: string) {
     return this.holdemService.removeBot(gameId, botId);
+  }
+
+  @Delete(":gameId/players/:playerId")
+  leaveGame(
+    @Param("gameId") gameId: string,
+    @Param("playerId") playerId: string,
+  ) {
+    return this.holdemService.leaveGame(gameId, playerId);
   }
 
   @Get(":gameId")

@@ -23,6 +23,23 @@ html {
   min-height: 100%;
 }
 
+/* When a full-screen game is active, lock the viewport */
+html:has(body.game-mode),
+body.game-mode {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body.game-mode .app-shell,
+body.game-mode .container {
+  height: 100dvh;
+  max-width: none;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
 body {
   min-height: 100vh;
   font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;

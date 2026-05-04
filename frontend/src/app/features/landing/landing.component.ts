@@ -12,7 +12,7 @@ export class LandingComponent {
 
   selectGame(game: string) {
     if (game === "bingo") {
-      this.router.navigate(["/"]);
+      this.router.navigate(["/bingo"]);
     } else if (game === "holdem") {
       this.router.navigate(["/holdem"]);
     }

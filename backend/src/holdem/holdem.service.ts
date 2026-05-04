@@ -4,14 +4,18 @@ import {
   OnApplicationBootstrap,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { LessThan, Repository } from "typeorm";
 import { HoldemGame } from "./entities/holdem-game.entity";
 import { HoldemPlayer } from "./entities/holdem-player.entity";
+import { PlayerAccount } from "./entities/player-account.entity";
 import { Subject } from "rxjs";
 import { makeDeck, shuffle, bestHandScore, handName } from "./cards";
 
 const BIG_BLIND = 10;
 const SMALL_BLIND = 5;
+const STARTING_BALANCE = 1000;
+const BUY_IN = 1000;
+const AUTO_DELETE_HOURS = 2;
 
 @Injectable()
 export class HoldemService implements OnApplicationBootstrap {
@@ -36,10 +40,29 @@ export class HoldemService implements OnApplicationBootstrap {
     const activePlayer = game.players.find((p) => p.id === playerId);
     if (activePlayer && this.isBot(activePlayer)) return; // bot handles itself
     const timeout = setTimeout(
-      () =>
-        this.playerAction(game.id, { type: "fold", playerId }).catch(() => {}),
-      game.moveTimeLimit * 1000 + 800, // +800ms grace for network
-    );
+      async () => {
+        // Increment missed-hand counter; kick after 3 consecutive missed hands
+        const playerEntity = await this.playerRepo.findOne({
+          where: { id: playerId },
+        });
+        if (!playerEntity) return;
+        playerEntity.missedHands = (playerEntity.missedHands ?? 0) + 1;
+        await this.playerRepo.save(playerEntity);
+        if (playerEntity.missedHands >= 3) {
+          console.log(
+            `[holdem] kicking ${playerId} after ${playerEntity.missedHands} missed hands`,
+          );
+          this.leaveGame(game.id, playerId).catch(() => {});
+        } else {
+          this.playerAction(game.id, {
+            type: "fold",
+            playerId,
+            _autoFold: true,
+          }).catch(() => {});
+        }
+      },
+      game.moveTimeLimit * 1000 + 800,
+    ); // +800ms grace for network
     this.turnTimeouts.set(game.id, timeout);
   }
 
@@ -47,12 +70,16 @@ export class HoldemService implements OnApplicationBootstrap {
     @InjectRepository(HoldemGame) private gameRepo: Repository<HoldemGame>,
     @InjectRepository(HoldemPlayer)
     private playerRepo: Repository<HoldemPlayer>,
+    @InjectRepository(PlayerAccount)
+    private accountRepo: Repository<PlayerAccount>,
   ) {}
 
   async onApplicationBootstrap() {
     await this.playerRepo.clear();
     await this.gameRepo.clear();
     console.log("[holdem] cleared stale games on startup");
+    // Auto-delete empty tables every 30 minutes
+    setInterval(() => this.deleteAbandonedGames(), 30 * 60 * 1000);
   }
   async getPublicGames() {
     return this.gameRepo.find({
@@ -106,16 +133,34 @@ export class HoldemService implements OnApplicationBootstrap {
       const existing = game.players.find((p) => p.id === dto.playerId);
       if (existing) {
         this.emit(game);
+        // Refresh human activity timestamp
+        await this.touchGame(game);
         return existing;
       }
     }
 
     if (game.players.length >= game.maxSeats) throw new Error("Table full");
     const humanPlayers = game.players.filter((p) => !this.isBot(p));
+
+    // Resolve the player's account; create if first time
+    const accountId = dto.accountId as string | undefined;
+    let buyIn = BUY_IN;
+    if (accountId) {
+      const account = await this.getOrCreateAccount(accountId);
+      if (account.balance <= 0) throw new Error("Insufficient balance");
+      // Short-stack: buy in with whatever they have, up to BUY_IN
+      const actualBuyIn = Math.min(account.balance, BUY_IN);
+      account.balance -= actualBuyIn;
+      account.lastSeenAt = new Date();
+      await this.accountRepo.save(account);
+      buyIn = actualBuyIn;
+    }
+
     const player = this.playerRepo.create({
       displayName: dto.displayName,
+      accountId: accountId ?? null,
       isHost: humanPlayers.length === 0,
-      chips: 1000,
+      chips: buyIn,
       isSeated: true,
       isFolded: false,
       isAllIn: false,
@@ -124,6 +169,7 @@ export class HoldemService implements OnApplicationBootstrap {
     });
     await this.playerRepo.save(player);
     game.players.push(player);
+    await this.touchGame(game);
     await this.gameRepo.save(game);
     this.emit(game);
 
@@ -211,7 +257,12 @@ export class HoldemService implements OnApplicationBootstrap {
 
   async playerAction(
     gameId: string,
-    dto: { type: string; amount?: number; playerId?: string },
+    dto: {
+      type: string;
+      amount?: number;
+      playerId?: string;
+      _autoFold?: boolean;
+    },
   ) {
     const game = await this.loadGame(gameId);
     if (!game) throw new NotFoundException("Game not found");
@@ -226,6 +277,11 @@ export class HoldemService implements OnApplicationBootstrap {
     const currentBet: number = game.state.currentBet ?? 0;
     const playerBet: number = game.state.bets?.[activePlayer.id] ?? 0;
     const callAmount = Math.max(0, currentBet - playerBet);
+
+    // If the player acted manually (not auto-folded), reset their missed-hand streak
+    if (!dto._autoFold && !this.isBot(activePlayer)) {
+      activePlayer.missedHands = 0;
+    }
 
     switch (dto.type) {
       case "fold":
@@ -385,6 +441,42 @@ export class HoldemService implements OnApplicationBootstrap {
     return fresh;
   }
 
+  async leaveGame(gameId: string, playerId: string): Promise<void> {
+    const game = await this.loadGame(gameId);
+    if (!game) return;
+    const player = game.players.find(
+      (p) => p.id === playerId && !this.isBot(p),
+    );
+    if (!player) return;
+
+    // Cash remaining chips back to account before removing
+    if (player.chips > 0) {
+      await this.cashOutToAccounts([player]);
+    }
+
+    // If it's this player's turn, fold them first so the hand advances
+    if (game.state?.activePlayerId === playerId && game.status === "active") {
+      await this.playerAction(gameId, { type: "fold", playerId });
+    }
+
+    const entity = await this.playerRepo.findOne({ where: { id: playerId } });
+    if (entity) await this.playerRepo.remove(entity);
+
+    const fresh = await this.loadGame(gameId);
+    if (!fresh) return;
+
+    if (
+      game.status === "active" &&
+      !player.isFolded &&
+      game.state?.activePlayerId !== playerId &&
+      this.isBettingComplete(fresh)
+    ) {
+      await this.advanceStreet(fresh);
+    } else {
+      this.emit(fresh);
+    }
+  }
+
   async getGame(gameId: string) {
     return this.loadGame(gameId);
   }
@@ -521,6 +613,11 @@ export class HoldemService implements OnApplicationBootstrap {
 
     if (game.players.filter((p) => p.isSeated && p.chips > 0).length < 2) {
       game.status = "completed";
+      // Game over — cash everyone's remaining chips back to their accounts
+      const humanPlayers = game.players.filter(
+        (p) => !this.isBot(p) && p.chips > 0,
+      );
+      await this.cashOutToAccounts(humanPlayers);
     } else {
       // Reset to waiting so startHand() guard doesn't block the next deal
       game.status = "waiting";
@@ -603,5 +700,102 @@ export class HoldemService implements OnApplicationBootstrap {
   private emit(game: HoldemGame): void {
     const subj = this.gameSubjects.get(game.id);
     if (subj) subj.next(game);
+  }
+
+  // ─── Account / balance helpers ───────────────────────────────────────────────
+
+  async getOrCreateAccount(playerId: string): Promise<PlayerAccount> {
+    let account = await this.accountRepo.findOne({ where: { playerId } });
+    if (!account) {
+      account = this.accountRepo.create({
+        playerId,
+        balance: STARTING_BALANCE,
+        lastSeenAt: new Date(),
+      });
+      await this.accountRepo.save(account);
+    }
+    return account;
+  }
+
+  async getBalance(
+    playerId: string,
+  ): Promise<{ balance: number; dailyBonusAwarded?: boolean }> {
+    const account = await this.getOrCreateAccount(playerId);
+    const now = new Date();
+    let dailyBonusAwarded = false;
+
+    // Award daily bonus: player has no balance, went broke 24h+ ago
+    if (
+      account.balance <= 0 &&
+      account.brokeAt &&
+      now.getTime() - account.brokeAt.getTime() >= 24 * 60 * 60 * 1000
+    ) {
+      account.balance = STARTING_BALANCE;
+      account.brokeAt = null;
+      dailyBonusAwarded = true;
+    }
+
+    account.lastSeenAt = now;
+    await this.accountRepo.save(account);
+    return {
+      balance: account.balance,
+      ...(dailyBonusAwarded ? { dailyBonusAwarded } : {}),
+    };
+  }
+
+  /** Add chips back to a player's account (called after each hand) */
+  private async cashOutToAccounts(players: HoldemPlayer[]) {
+    for (const p of players) {
+      if (!p.accountId) continue;
+      const account = await this.accountRepo.findOne({
+        where: { playerId: p.accountId },
+      });
+      if (!account) continue;
+      account.balance += p.chips;
+      // Record when they first hit zero so the daily-bonus timer starts
+      if (account.balance <= 0 && !account.brokeAt) {
+        account.brokeAt = new Date();
+      } else if (account.balance > 0) {
+        account.brokeAt = null; // they recovered, clear the timer
+      }
+      await this.accountRepo.save(account);
+    }
+  }
+
+  // ─── Auto-delete abandoned games ─────────────────────────────────────────────
+
+  private async deleteAbandonedGames() {
+    const cutoff = new Date(Date.now() - AUTO_DELETE_HOURS * 60 * 60 * 1000);
+    const candidates = await this.gameRepo.find({
+      where: { lastHumanActivityAt: LessThan(cutoff) },
+      relations: ["players"],
+    });
+    // Also delete games that have never had human activity and were created before cutoff
+    const neverTouched = await this.gameRepo
+      .createQueryBuilder("game")
+      .where("game.lastHumanActivityAt IS NULL")
+      .andWhere("game.createdAt < :cutoff", { cutoff })
+      .getMany();
+
+    const toDelete = [
+      ...candidates,
+      ...neverTouched.filter((g) => !candidates.find((c) => c.id === g.id)),
+    ].filter((game) => {
+      const humans = (game.players ?? []).filter((p) => !this.isBot(p));
+      return humans.length === 0;
+    });
+
+    for (const game of toDelete) {
+      this.gameSubjects.get(game.id)?.complete();
+      this.gameSubjects.delete(game.id);
+      this.clearTurnTimeout(game.id);
+      await this.gameRepo.remove(game);
+      console.log(`[holdem] auto-deleted abandoned game ${game.id}`);
+    }
+  }
+
+  private async touchGame(game: HoldemGame) {
+    game.lastHumanActivityAt = new Date();
+    await this.gameRepo.save(game);
   }
 }

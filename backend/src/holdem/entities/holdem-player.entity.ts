@@ -12,6 +12,10 @@ export class HoldemPlayer {
   @Column()
   displayName!: string;
 
+  /** The persistent player account UUID (null for bots) */
+  @Column({ nullable: true, type: "varchar" })
+  accountId!: string | null;
+
   @Column({ default: 100 })
   chips!: number;
 
@@ -29,4 +33,8 @@ export class HoldemPlayer {
 
   @Column("simple-json", { default: "[]" })
   cards!: string[];
+
+  /** Consecutive hands auto-folded due to inactivity; kicked at 3 */
+  @Column({ default: 0 })
+  missedHands!: number;
 }

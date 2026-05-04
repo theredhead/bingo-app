@@ -29,11 +29,55 @@ h1 {
   margin-bottom: 1.6rem;
 }
 
+/* Hide decorative heading when a game is active */
+.holdem.is-table .page-eyebrow,
+.holdem.is-table h1 {
+  display: none;
+}
+
+/* In-game: fill the locked viewport completely */
+.holdem.is-table {
+  height: 100dvh;
+  padding: 0;
+  max-width: none;
+  margin: 0;
+  overflow: hidden;
+}
+
 /* ── Landing ─────────────────────────────────────────────── */
 .holdem-actions {
   display: flex;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
+}
+
+.balance-pill {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  border: 1.5px solid rgba(22, 163, 74, 0.25);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+}
+
+.balance-pill.broke {
+  color: #9f2f2f;
+  background: rgba(159, 47, 47, 0.08);
+  border-color: rgba(159, 47, 47, 0.22);
+}
+
+.balance-pill.bonus {
+  color: #b45309;
+  background: rgba(217, 120, 65, 0.12);
+  border-color: rgba(217, 120, 65, 0.3);
+  animation: bonus-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes bonus-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .public-tables {
@@ -219,6 +263,42 @@ h1 {
   border-color: var(--accent);
 }
 
+.avatar-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.avatar-option {
+  width: 40px;
+  height: 40px;
+  font-size: 1.4rem;
+  line-height: 1;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.12s, background 0.12s, transform 0.1s;
+}
+
+.avatar-option:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.15);
+}
+
+.avatar-option.selected {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb, 78, 158, 114), 0.12);
+  transform: scale(1.15);
+}
+
 .form-actions {
   display: flex;
   flex-direction: column;
@@ -231,28 +311,37 @@ h1 {
   font-size: 0.9rem;
 }
 
-/* ── Table view wrapper ───────────────────────────────────── */
+/* ── Table view: fills viewport, flex column ───────────────── */
 .table-view {
-  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.2rem;
-  margin-top: 0.5rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── SVG poker table: fills the flex column middle row ──────── */
+.table-svg {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* Timer ring: smooth drain animation */
+.timer-ring {
+  transition: stroke-dashoffset 0.9s linear;
 }
 
 /* ── Table header bar ────────────────────────────────────── */
 .table-header {
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  padding: 0.7rem 1rem;
+  gap: 0.65rem;
+  padding: 0.45rem 0.75rem;
   background: var(--paper);
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  border-bottom: 1.5px solid var(--line);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .phase-badge {
@@ -412,13 +501,6 @@ h1 {
 }
 
 /* ── Seats ───────────────────────────────────────────────── */
-.opponents-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  width: 100%;
-}
 
 /* my seat sits below the table, centered, wider */
 .me-seat {
@@ -433,7 +515,7 @@ h1 {
   padding: 1.1rem 2rem;
   position: relative;
   width: 100%;
-  max-width: 380px;
+  max-width: 480px;
   align-self: center;
 }
 
@@ -478,9 +560,9 @@ h1 {
 }
 
 .my-card {
-  width: min(19vw, 4.5rem);
-  height: min(26.5vw, 6.25rem);
-  font-size: min(6vw, 1.4rem);
+  width: 4.5rem;
+  height: 6.25rem;
+  font-size: 1.4rem;
   border-radius: 10px;
   border-width: 2px;
   flex-shrink: 0;
@@ -668,20 +750,23 @@ h1 {
   padding: 0.15em 0.65em;
 }
 
-/* ── Action controls ─────────────────────────────────────── */
+.waiting-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: auto;
+}
+
+/* ── Action bar ─────────────────────────────────────── */
 .actions {
   display: flex;
   align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
   justify-content: center;
-  padding: 0.9rem 1.2rem;
+  padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
   background: var(--paper);
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  width: 100%;
-  max-width: 640px;
+  border-top: 1.5px solid var(--line);
 }
 
 .action-btn {
@@ -789,10 +874,14 @@ h1 {
   transition: opacity 0.15s, outline 0.1s, transform 120ms;
 }
 
-.pre-btn.pre-selected {
+.pre-btn.pre-selected,
+.action-btn.pre-selected {
   opacity: 1;
   outline: 2.5px solid currentColor;
   outline-offset: 2px;
+  filter: brightness(0.88) saturate(1.4);
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.12);
 }
 
 .pre-btn:hover {
@@ -916,16 +1005,10 @@ h1 {
     gap: 0;
   }
 
-  /* Hide the decorative heading when inside a live table — reclaim ~100px */
-  .holdem.is-table .page-eyebrow,
-  .holdem.is-table h1 {
-    display: none;
-  }
-
   /* ── Table view ── */
-  .table-view {
-    gap: 0.5rem;
-    margin-top: 0;
+  .table-content {
+    padding: 0.3rem;
+    gap: 0.3rem;
   }
 
   /* ── Header bar ── */
