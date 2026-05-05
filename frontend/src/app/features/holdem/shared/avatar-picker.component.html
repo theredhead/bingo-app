@@ -1,0 +1,10 @@
+<div class="avatar-picker">
+  @for (e of AVATARS; track e) {
+    <button
+      type="button"
+      class="avatar-option"
+      [class.selected]="selected() === e"
+      (click)="select.emit(e)"
+    >{{ e }}</button>
+  }
+</div>

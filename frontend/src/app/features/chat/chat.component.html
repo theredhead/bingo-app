@@ -1,0 +1,84 @@
+@if (step() === 'lobby') {
+  <div class="chat-lobby">
+    <p class="page-eyebrow">Games</p>
+    <h1>Chat</h1>
+
+    <label class="identity-label">Your name
+      <input
+        placeholder="e.g. kris@theredhead.nl"
+        [value]="from()"
+        (input)="from.set($any($event.target).value); saveName()"
+        (keydown.enter)="pendingRoomId() ? joinPending() : null"
+      />
+    </label>
+
+    @if (pendingRoomId()) {
+      <div class="pending-room-notice">
+        <span>Room <strong>{{ pendingRoomId() }}</strong> — enter your name then click Join.</span>
+        <button
+          class="primary-btn"
+          (click)="joinPending()"
+          [disabled]="!from().trim() || loading()"
+        >Join</button>
+      </div>
+    }
+
+    <section class="lobby-rooms">
+      <h2>Open Rooms</h2>
+      @if (rooms().length === 0) {
+        <p class="empty">No rooms yet — create one below.</p>
+      } @else {
+        <ul class="room-list">
+          @for (r of rooms(); track r.id) {
+            <li class="room-item">
+              <span class="room-name">{{ r.name }}</span>
+              <span class="room-count">{{ r.memberCount }} online</span>
+              <button
+                class="primary-btn"
+                (click)="join(r.id)"
+                [disabled]="!from().trim() || loading()"
+              >Join</button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="create-room">
+      <h2>Create Room</h2>
+      <div class="create-row">
+        <input
+          placeholder="Room name"
+          [value]="newRoomName()"
+          (input)="newRoomName.set($any($event.target).value)"
+          (keydown.enter)="create()"
+        />
+        <button
+          class="primary-btn"
+          (click)="create()"
+          [disabled]="!newRoomName().trim() || !from().trim() || loading()"
+        >Create &amp; Join</button>
+      </div>
+    </section>
+
+    @if (error()) { <div class="error">{{ error() }}</div> }
+  </div>
+
+} @else {
+
+  <div class="chat-page">
+    <app-chat-room [messages]="messages()" />
+
+    <div class="chat-input-bar">
+      <input
+        #messageInput
+        placeholder="Say something…"
+        [value]="draft()"
+        (input)="draft.set($any($event.target).value)"
+        (keydown.enter)="send()"
+      />
+      <button class="primary-btn" (click)="send()" [disabled]="!draft().trim()">Send</button>
+    </div>
+  </div>
+
+}

@@ -1,0 +1,54 @@
+<div class="holdem-actions">
+  <button class="primary-btn" (click)="createClicked.emit()">+ Create Table</button>
+  @if (balance() !== null) {
+    @if (dailyBonusAwarded()) {
+      <span class="balance-pill bonus">🎉 Daily bonus! {{ balance() }} chips</span>
+    } @else if (balance()! <= 0) {
+      <span class="balance-pill broke">💸 No chips — come back in 24h for a bonus!</span>
+    } @else {
+      <span class="balance-pill">💰 {{ balance() }} chips</span>
+    }
+  }
+</div>
+
+<div class="public-tables">
+  <h2>Open Tables</h2>
+  @if (publicLoading()) {
+    <div class="loading">Loading tables…</div>
+  } @else if (publicTables().length === 0) {
+    <div class="loading">No tables yet — be the first!</div>
+  } @else {
+    <div class="table-list">
+      @for (t of publicTables(); track t.id) {
+        <div class="table-card">
+          <div class="table-info">
+            <span class="table-name">{{ t.limitType }} · {{ t.maxSeats }} seats</span>
+            <span class="table-seats">{{ t.players.length }}/{{ t.maxSeats }} players</span>
+            <span class="table-status" [attr.data-status]="t.status">{{ t.status }}</span>
+          </div>
+
+          @if (pendingJoinId() === t.id) {
+            <div class="join-inline">
+              <app-avatar-picker [selected]="avatar()" (select)="avatarSelected.emit($event)" />
+              <input
+                [value]="displayName()"
+                (input)="displayNameChanged.emit($any($event.target).value)"
+                placeholder="Display name"
+                required
+              />
+              <button
+                class="primary-btn"
+                [disabled]="loading() || !displayName()"
+                (click)="joinClicked.emit(t.id)"
+              >Join</button>
+              <button class="ghost-btn" type="button" (click)="cancelJoin.emit()">Cancel</button>
+              @if (error()) { <div class="error">{{ error() }}</div> }
+            </div>
+          } @else {
+            <button class="primary-btn" (click)="startJoin.emit(t.id)">Join</button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,11 @@
+<div class="chat-room">
+  @for (msg of messages(); track $index) {
+    <div
+      [attr.data-from]="msg.from"
+      [class]="msg.type + (msg.mine ? ' mine' : '')"
+    >
+      @if (msg.type === 'emote') { {{ msg.from }} } {{ msg.text }}
+    </div>
+  }
+  <div class="end-of-log-marker" #logEnd></div>
+</div>

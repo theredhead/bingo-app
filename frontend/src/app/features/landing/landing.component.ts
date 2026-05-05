@@ -15,6 +15,8 @@ export class LandingComponent {
       this.router.navigate(["/bingo"]);
     } else if (game === "holdem") {
       this.router.navigate(["/holdem"]);
+    } else if (game === "chat") {
+      this.router.navigate(["/chat"]);
     }
   }
 }

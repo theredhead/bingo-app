@@ -1,0 +1,110 @@
+/* ── Buttons ─────────────────────────────────────────────── */
+.primary-btn {
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(31, 106, 82, 0.18);
+  transition: filter 0.15s, box-shadow 0.15s, transform 120ms;
+  white-space: nowrap;
+}
+
+.primary-btn:hover:not(:disabled) {
+  filter: brightness(1.08) saturate(1.15);
+  box-shadow: 0 4px 16px rgba(31, 106, 82, 0.25);
+  transform: translateY(-1px);
+}
+
+.primary-btn:active:not(:disabled) { transform: translateY(0); }
+.primary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ghost-btn {
+  min-height: 40px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.92rem;
+  border: 1.5px solid var(--line);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ghost-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+.error { color: #9f2f2f; font-size: 0.9rem; }
+
+/* ── Form ────────────────────────────────────────────────── */
+.holdem-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.8rem 2rem;
+  min-width: 320px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.form-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+}
+
+.holdem-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.holdem-form input,
+.holdem-form select {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  padding: 0.55em 0.8em;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: rgba(255, 255, 255, 0.8);
+  transition: border-color 0.15s;
+}
+
+.holdem-form input:focus,
+.holdem-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .holdem-form {
+    padding: 1.1rem 0.9rem;
+    min-width: unset;
+  }
+}

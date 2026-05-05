@@ -36,6 +36,17 @@ export const routes: Routes = [
     loadComponent: () =>
       import("./features/card/card.component").then((m) => m.CardComponent),
   },
+  // Chat
+  {
+    path: "chat",
+    loadComponent: () =>
+      import("./features/chat/chat.component").then((m) => m.ChatComponent),
+  },
+  {
+    path: "chat/:roomId",
+    loadComponent: () =>
+      import("./features/chat/chat.component").then((m) => m.ChatComponent),
+  },
   // Texas Hold'em placeholder
   {
     path: "holdem",

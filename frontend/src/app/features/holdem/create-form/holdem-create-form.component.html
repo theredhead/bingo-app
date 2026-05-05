@@ -1,0 +1,54 @@
+<form (submit)="submit($event)" class="holdem-form">
+  <div class="form-title">New Table</div>
+
+  <label>Your Avatar
+    <app-avatar-picker [selected]="avatar()" (select)="avatarSelected.emit($event)" />
+  </label>
+
+  <label>Display Name
+    <input
+      [value]="displayName()"
+      (input)="displayNameChanged.emit($any($event.target).value)"
+      name="displayName"
+      required
+      placeholder="How others see you"
+    />
+  </label>
+
+  <label>Limit Type
+    <select [value]="limitType()" (change)="limitType.set($any($event.target).value)">
+      <option value="no-limit">No Limit</option>
+      <option value="pot-limit">Pot Limit</option>
+      <option value="fixed-limit">Fixed Limit</option>
+    </select>
+  </label>
+
+  <label>Move Time Limit (sec)
+    <input
+      type="number"
+      [value]="moveTimeLimit()"
+      (input)="moveTimeLimit.set($any($event.target).valueAsNumber)"
+      min="10"
+      max="120"
+    />
+  </label>
+
+  <label>Bot Players (0–5)
+    <input
+      type="number"
+      [value]="botCount()"
+      (input)="botCount.set($any($event.target).valueAsNumber)"
+      min="0"
+      max="5"
+    />
+  </label>
+
+  <div class="form-actions">
+    <button class="primary-btn" type="submit" [disabled]="loading() || !displayName()">
+      Create &amp; Join
+    </button>
+    <button class="ghost-btn" type="button" (click)="back.emit()">Back</button>
+  </div>
+
+  @if (error()) { <div class="error">{{ error() }}</div> }
+</form>
